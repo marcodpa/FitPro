@@ -168,6 +168,7 @@ export default function ProfileTab() {
   } = useAppStore();
   const t = useTheme();
   const router = useRouter();
+  const [showVoiceSheet, setShowVoiceSheet] = useState(false);
 
   const handleLogout = () => {
     Alert.alert('Cerrar Sesion', 'Estas seguro que quieres salir?', [
