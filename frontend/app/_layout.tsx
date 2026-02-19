@@ -7,16 +7,22 @@ import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind';
 import { ErrorBoundary } from './error-boundary';
 import { AppProvider, useAppStore } from '@/lib/store';
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 
-function NavigationGuard({ children }: { children: React.ReactNode }) {
+function NavigationGuard() {
   const { isAuthenticated, isOnboarded } = useAppStore();
   const segments = useSegments();
   const router = useRouter();
+  const isMounted = useRef(false);
 
   useEffect(() => {
+    isMounted.current = true;
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted.current) return;
+
     const inAuthGroup = segments[0] === 'auth';
-    const inTabs = segments[0] === '(tabs)';
 
     if (!isOnboarded && segments[0] !== 'auth') {
       router.replace('/auth/onboarding');
@@ -31,9 +37,9 @@ function NavigationGuard({ children }: { children: React.ReactNode }) {
     if (isAuthenticated && inAuthGroup) {
       router.replace('/(tabs)');
     }
-  }, [isAuthenticated, isOnboarded, segments]);
+  }, [isAuthenticated, isOnboarded, segments, isMounted.current]);
 
-  return <>{children}</>;
+  return null;
 }
 
 function RootLayoutInner() {
@@ -42,9 +48,8 @@ function RootLayoutInner() {
   return (
     <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-      <NavigationGuard>
-        <Stack screenOptions={{ headerShown: false }} />
-      </NavigationGuard>
+      <Stack screenOptions={{ headerShown: false }} />
+      <NavigationGuard />
     </ThemeProvider>
   );
 }
