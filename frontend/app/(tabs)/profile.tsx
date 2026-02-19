@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -9,15 +9,147 @@ import {
   Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAppStore } from '@/lib/store';
+import { useAppStore, useTheme } from '@/lib/store';
 import type { UserRole } from '@/lib/types';
+import {
+  Pencil,
+  Moon,
+  WifiOff,
+  Mic,
+  CalendarDays,
+  CreditCard,
+  BookOpen,
+  Lock,
+  HelpCircle,
+  LogOut,
+  ChevronRight,
+  Dumbbell,
+  ShieldCheck,
+  Users,
+  User,
+  Zap,
+} from 'lucide-react-native';
+import { FONT, RADIUS, SPACING } from '@/lib/theme';
 
-const ROLE_OPTIONS: { label: string; value: UserRole; icon: string; color: string }[] = [
-  { label: 'Cliente', value: 'client', icon: '🏃', color: '#0d9e6e' },
-  { label: 'Entrenador', value: 'trainer', icon: '🏋️', color: '#2563eb' },
-  { label: 'Admin', value: 'admin', icon: '👑', color: '#7c3aed' },
-  { label: 'Usuario', value: 'user', icon: '🙋', color: '#64748b' },
+const ROLE_OPTIONS: { label: string; value: UserRole; color: string }[] = [
+  { label: 'Cliente',     value: 'client',  color: '#22c55e' },
+  { label: 'Entrenador',  value: 'trainer', color: '#818cf8' },
+  { label: 'Admin',       value: 'admin',   color: '#f59e0b' },
+  { label: 'Usuario',     value: 'user',    color: '#64748b' },
 ];
+
+function SectionHeader({ title }: { title: string }) {
+  const t = useTheme();
+  return (
+    <Text
+      style={{
+        color: t.text.tertiary,
+        fontSize: FONT.xs,
+        fontWeight: '700',
+        letterSpacing: 1.4,
+        textTransform: 'uppercase',
+        marginTop: SPACING.xxl,
+        marginBottom: SPACING.md,
+        paddingHorizontal: SPACING.xxl,
+      }}>
+      {title}
+    </Text>
+  );
+}
+
+function MenuRow({
+  icon,
+  label,
+  onPress,
+  last = false,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onPress?: () => void;
+  last?: boolean;
+}) {
+  const t = useTheme();
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: SPACING.lg,
+        paddingHorizontal: SPACING.lg,
+        paddingVertical: 15,
+        backgroundColor: t.bg.card,
+        borderBottomWidth: last ? 0 : 1,
+        borderBottomColor: t.border.subtle,
+      }}>
+      <View
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: RADIUS.md,
+          backgroundColor: t.bg.tertiary,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+        {icon}
+      </View>
+      <Text style={{ flex: 1, color: t.text.primary, fontSize: FONT.base, fontWeight: '500' }}>
+        {label}
+      </Text>
+      <ChevronRight size={15} color={t.text.tertiary} />
+    </TouchableOpacity>
+  );
+}
+
+function ToggleRow({
+  icon,
+  label,
+  value,
+  onToggle,
+  last = false,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: boolean;
+  onToggle: () => void;
+  last?: boolean;
+}) {
+  const t = useTheme();
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: SPACING.lg,
+        paddingHorizontal: SPACING.lg,
+        paddingVertical: 15,
+        backgroundColor: t.bg.card,
+        borderBottomWidth: last ? 0 : 1,
+        borderBottomColor: t.border.subtle,
+      }}>
+      <View
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: RADIUS.md,
+          backgroundColor: t.bg.tertiary,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+        {icon}
+      </View>
+      <Text style={{ flex: 1, color: t.text.primary, fontSize: FONT.base, fontWeight: '500' }}>
+        {label}
+      </Text>
+      <Switch
+        value={value}
+        onValueChange={onToggle}
+        trackColor={{ false: t.border.strong, true: t.accent }}
+        thumbColor={value ? t.accentText : t.text.secondary}
+      />
+    </View>
+  );
+}
 
 export default function ProfileTab() {
   const {
@@ -25,18 +157,18 @@ export default function ProfileTab() {
     logout,
     activeRole,
     setRole,
-    isOffline,
-    toggleOffline,
     isDarkMode,
     toggleDarkMode,
+    isOffline,
+    toggleOffline,
     voiceEnabled,
     toggleVoice,
   } = useAppStore();
+  const t = useTheme();
   const router = useRouter();
-  const [showRoleSwitch, setShowRoleSwitch] = useState(false);
 
   const handleLogout = () => {
-    Alert.alert('Cerrar Sesión', '¿Estás seguro que quieres salir?', [
+    Alert.alert('Cerrar Sesion', 'Estas seguro que quieres salir?', [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Salir',
@@ -50,276 +182,287 @@ export default function ProfileTab() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-background" showsVerticalScrollIndicator={false}>
-      {/* Header */}
+    <ScrollView
+      style={{ flex: 1, backgroundColor: t.bg.primary }}
+      showsVerticalScrollIndicator={false}>
+
+      {/* Hero Header */}
       <View
         style={{
-          backgroundColor: '#0d9e6e',
-          paddingTop: 56,
-          paddingBottom: 40,
-          paddingHorizontal: 24,
-          borderBottomLeftRadius: 36,
-          borderBottomRightRadius: 36,
+          backgroundColor: t.bg.secondary,
+          paddingTop: 60,
+          paddingBottom: SPACING.xxl,
           alignItems: 'center',
+          borderBottomWidth: 1,
+          borderBottomColor: t.border.subtle,
         }}>
-        <Image
-          source={{ uri: user?.avatar }}
-          style={{
-            width: 90,
-            height: 90,
-            borderRadius: 45,
-            borderWidth: 4,
-            borderColor: '#fff',
-            marginBottom: 12,
-          }}
-        />
-        <Text className="text-white font-bold" style={{ fontSize: 22 }}>
+        {/* Avatar */}
+        <View style={{ position: 'relative', marginBottom: SPACING.lg }}>
+          <Image
+            source={{ uri: user?.avatar }}
+            style={{
+              width: 88,
+              height: 88,
+              borderRadius: 44,
+              backgroundColor: t.bg.tertiary,
+              borderWidth: 3,
+              borderColor: t.accent,
+            }}
+          />
+          <View
+            style={{
+              position: 'absolute',
+              bottom: 2,
+              right: 2,
+              width: 20,
+              height: 20,
+              borderRadius: 10,
+              backgroundColor: t.success,
+              borderWidth: 2,
+              borderColor: t.bg.secondary,
+            }}
+          />
+        </View>
+
+        <Text style={{ color: t.text.primary, fontWeight: '800', fontSize: FONT.xxl, letterSpacing: -0.3 }}>
           {user?.name}
         </Text>
-        <Text className="text-white/70 text-sm">{user?.email}</Text>
+        <Text style={{ color: t.text.secondary, fontSize: FONT.sm, marginTop: 3 }}>
+          {user?.email}
+        </Text>
+
+        {/* Role chip */}
         <View
           style={{
-            backgroundColor: 'rgba(255,255,255,0.25)',
-            borderRadius: 20,
-            paddingHorizontal: 14,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 6,
+            backgroundColor: t.accentDim,
+            borderRadius: RADIUS.full,
+            paddingHorizontal: SPACING.lg,
             paddingVertical: 6,
-            marginTop: 8,
+            marginTop: SPACING.md,
+            borderWidth: 1,
+            borderColor: t.accent,
           }}>
-          <Text className="text-white font-semibold text-sm capitalize">{activeRole}</Text>
+          <Zap size={11} color={t.text.accent} fill={t.text.accent} />
+          <Text style={{ color: t.text.accent, fontWeight: '700', fontSize: FONT.xs, textTransform: 'capitalize', letterSpacing: 0.5 }}>
+            {activeRole}
+          </Text>
         </View>
       </View>
 
-      <View className="px-6 pt-6">
-        {/* Stats */}
-        <View
-          className="flex-row gap-3 mb-6">
-          {[
-            { label: 'Sesiones', value: '14', icon: '🏋️' },
-            { label: 'Rutinas', value: '4', icon: '📋' },
-            { label: 'Seguidores', value: '28', icon: '👥' },
-          ].map((stat) => (
-            <View
-              key={stat.label}
-              style={{
-                flex: 1,
-                backgroundColor: '#fff',
-                borderRadius: 16,
-                padding: 14,
-                alignItems: 'center',
-                borderWidth: 1,
-                borderColor: '#f1f5f9',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.05,
-                shadowRadius: 6,
-                elevation: 2,
-              }}>
-              <Text style={{ fontSize: 22 }}>{stat.icon}</Text>
-              <Text className="text-foreground font-bold text-xl mt-1">{stat.value}</Text>
-              <Text className="text-muted-foreground text-xs">{stat.label}</Text>
-            </View>
-          ))}
-        </View>
+      {/* Stats row */}
+      <View
+        style={{
+          flexDirection: 'row',
+          gap: 1,
+          backgroundColor: t.border.subtle,
+          borderBottomWidth: 1,
+          borderBottomColor: t.border.subtle,
+        }}>
+        {[
+          { label: 'Sesiones', value: '14', icon: <Dumbbell size={16} color={t.text.accent} /> },
+          { label: 'Rutinas',  value: '4',  icon: <BookOpen  size={16} color={t.info} /> },
+          { label: 'Seguidores', value: '28', icon: <Users size={16} color={t.success} /> },
+        ].map((s) => (
+          <View
+            key={s.label}
+            style={{
+              flex: 1,
+              backgroundColor: t.bg.secondary,
+              paddingVertical: SPACING.lg,
+              alignItems: 'center',
+              gap: 4,
+            }}>
+            {s.icon}
+            <Text style={{ color: t.text.primary, fontWeight: '800', fontSize: FONT.xl }}>
+              {s.value}
+            </Text>
+            <Text style={{ color: t.text.secondary, fontSize: FONT.xs }}>
+              {s.label}
+            </Text>
+          </View>
+        ))}
+      </View>
 
-        {/* Edit profile */}
+      {/* Edit profile */}
+      <View style={{ paddingHorizontal: SPACING.xxl, paddingTop: SPACING.xl }}>
         <TouchableOpacity
           onPress={() => router.push('/profile/edit' as any)}
           style={{
-            backgroundColor: '#fff',
-            borderRadius: 16,
-            padding: 16,
             flexDirection: 'row',
             alignItems: 'center',
-            gap: 14,
-            marginBottom: 20,
+            gap: SPACING.lg,
+            backgroundColor: t.accentDim,
+            borderRadius: RADIUS.xl,
+            padding: SPACING.lg,
             borderWidth: 1,
-            borderColor: '#e2f8f0',
-            shadowColor: '#0d9e6e',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.08,
-            shadowRadius: 8,
-            elevation: 3,
+            borderColor: t.accent,
           }}>
           <View
             style={{
-              width: 44,
-              height: 44,
-              borderRadius: 22,
-              backgroundColor: '#e2f8f0',
+              width: 42,
+              height: 42,
+              borderRadius: RADIUS.lg,
+              backgroundColor: t.accent,
               alignItems: 'center',
               justifyContent: 'center',
             }}>
-            <Text style={{ fontSize: 22 }}>✏️</Text>
+            <Pencil size={18} color={t.accentText} strokeWidth={2.5} />
           </View>
-          <View className="flex-1">
-            <Text className="text-foreground font-bold text-base">Editar Perfil</Text>
-            <Text className="text-muted-foreground text-xs">Nombre, bio, peso, altura, objetivo</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: t.text.primary, fontWeight: '700', fontSize: FONT.base }}>
+              Editar Perfil
+            </Text>
+            <Text style={{ color: t.text.secondary, fontSize: FONT.xs, marginTop: 2 }}>
+              Nombre, bio, peso, altura, objetivo
+            </Text>
           </View>
-          <Text className="text-muted-foreground">›</Text>
+          <ChevronRight size={16} color={t.text.secondary} />
         </TouchableOpacity>
+      </View>
 
-        {/* Settings section */}
-        <Text className="text-foreground font-bold text-base mb-3">Configuración</Text>
-        <View
-          style={{
-            backgroundColor: '#fff',
-            borderRadius: 20,
-            overflow: 'hidden',
-            borderWidth: 1,
-            borderColor: '#f1f5f9',
-            marginBottom: 20,
-          }}>
-          {[
-            {
-              icon: '🌙',
-              label: 'Modo Oscuro',
-              value: isDarkMode,
-              toggle: toggleDarkMode,
-            },
-            {
-              icon: '📵',
-              label: 'Modo Offline',
-              value: isOffline,
-              toggle: toggleOffline,
-            },
-            {
-              icon: '🎤',
-              label: 'Comandos de Voz',
-              value: voiceEnabled,
-              toggle: toggleVoice,
-            },
-          ].map((item, i) => (
-            <View
-              key={item.label}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 14,
-                paddingHorizontal: 16,
-                paddingVertical: 14,
-                borderBottomWidth: i < 2 ? 1 : 0,
-                borderBottomColor: '#f8fafc',
-              }}>
-              <Text style={{ fontSize: 22, width: 30, textAlign: 'center' }}>{item.icon}</Text>
-              <Text className="text-foreground font-medium text-sm flex-1">{item.label}</Text>
-              <Switch
-                value={item.value}
-                onValueChange={item.toggle}
-                trackColor={{ false: '#e2e8f0', true: '#86efac' }}
-                thumbColor={item.value ? '#0d9e6e' : '#94a3b8'}
-              />
-            </View>
-          ))}
-        </View>
+      {/* Personal info */}
+      <SectionHeader title="Informacion personal" />
+      <View
+        style={{
+          marginHorizontal: SPACING.xxl,
+          backgroundColor: t.bg.card,
+          borderRadius: RADIUS.xl,
+          overflow: 'hidden',
+          borderWidth: 1,
+          borderColor: t.border.subtle,
+        }}>
+        {[
+          { label: 'Objetivo',       value: user?.goal },
+          { label: 'Peso',           value: `${user?.weight ?? '—'} kg` },
+          { label: 'Altura',         value: `${user?.height ?? '—'} cm` },
+          { label: 'Miembro desde',  value: user?.joinedAt },
+        ].map((info, i, arr) => (
+          <View
+            key={info.label}
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              paddingHorizontal: SPACING.lg,
+              paddingVertical: 13,
+              borderBottomWidth: i < arr.length - 1 ? 1 : 0,
+              borderBottomColor: t.border.subtle,
+            }}>
+            <Text style={{ color: t.text.secondary, fontSize: FONT.sm }}>{info.label}</Text>
+            <Text style={{ color: t.text.primary, fontSize: FONT.sm, fontWeight: '600' }}>
+              {info.value ?? '—'}
+            </Text>
+          </View>
+        ))}
+      </View>
 
-        {/* Role switcher (demo) */}
-        <Text className="text-foreground font-bold text-base mb-3">Cambiar Rol (Demo)</Text>
-        <View className="flex-row flex-wrap gap-2 mb-6">
-          {ROLE_OPTIONS.map((r) => (
+      {/* Settings */}
+      <SectionHeader title="Configuracion" />
+      <View
+        style={{
+          marginHorizontal: SPACING.xxl,
+          backgroundColor: t.bg.card,
+          borderRadius: RADIUS.xl,
+          overflow: 'hidden',
+          borderWidth: 1,
+          borderColor: t.border.subtle,
+        }}>
+        <ToggleRow
+          icon={<Moon size={17} color={t.info} />}
+          label="Modo Oscuro"
+          value={isDarkMode}
+          onToggle={toggleDarkMode}
+        />
+        <ToggleRow
+          icon={<WifiOff size={17} color={t.warning} />}
+          label="Modo Offline"
+          value={isOffline}
+          onToggle={toggleOffline}
+        />
+        <ToggleRow
+          icon={<Mic size={17} color={t.success} />}
+          label="Comandos de Voz"
+          value={voiceEnabled}
+          onToggle={toggleVoice}
+          last
+        />
+      </View>
+
+      {/* Role switcher */}
+      <SectionHeader title="Cambiar Rol (Demo)" />
+      <View
+        style={{
+          flexDirection: 'row',
+          flexWrap: 'wrap',
+          gap: SPACING.sm,
+          paddingHorizontal: SPACING.xxl,
+        }}>
+        {ROLE_OPTIONS.map((r) => {
+          const isActive = activeRole === r.value;
+          return (
             <TouchableOpacity
               key={r.value}
               onPress={() => setRole(r.value)}
               style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 6,
-                paddingHorizontal: 14,
-                paddingVertical: 10,
-                borderRadius: 14,
-                backgroundColor: activeRole === r.value ? r.color : '#f1f5f9',
-                borderWidth: 2,
-                borderColor: activeRole === r.value ? r.color : 'transparent',
+                paddingHorizontal: SPACING.lg,
+                paddingVertical: SPACING.md,
+                borderRadius: RADIUS.lg,
+                backgroundColor: isActive ? r.color : t.bg.card,
+                borderWidth: 1,
+                borderColor: isActive ? r.color : t.border.default,
               }}>
-              <Text style={{ fontSize: 18 }}>{r.icon}</Text>
               <Text
                 style={{
-                  color: activeRole === r.value ? '#fff' : '#64748b',
-                  fontWeight: '600',
-                  fontSize: 13,
+                  color: isActive ? '#fff' : t.text.secondary,
+                  fontWeight: '700',
+                  fontSize: FONT.sm,
                 }}>
                 {r.label}
               </Text>
             </TouchableOpacity>
-          ))}
-        </View>
+          );
+        })}
+      </View>
 
-        {/* Menu items */}
-        <Text className="text-foreground font-bold text-base mb-3">Más opciones</Text>
-        <View
-          style={{
-            backgroundColor: '#fff',
-            borderRadius: 20,
-            overflow: 'hidden',
-            borderWidth: 1,
-            borderColor: '#f1f5f9',
-            marginBottom: 20,
-          }}>
-          {[
-            { icon: '📅', label: 'Calendario', route: '/calendar' },
-            { icon: '💳', label: 'Planes y Pagos', route: '/payments' },
-            { icon: '📚', label: 'Biblioteca Ejercicios', route: '/exercises' },
-            { icon: '🔒', label: 'Privacidad', route: null },
-            { icon: '🆘', label: 'Ayuda y Soporte', route: null },
-          ].map((item, i) => (
-            <TouchableOpacity
-              key={item.label}
-              onPress={() => item.route && router.push(item.route as any)}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 14,
-                paddingHorizontal: 16,
-                paddingVertical: 14,
-                borderBottomWidth: i < 4 ? 1 : 0,
-                borderBottomColor: '#f8fafc',
-              }}>
-              <Text style={{ fontSize: 22, width: 30, textAlign: 'center' }}>{item.icon}</Text>
-              <Text className="text-foreground font-medium text-sm flex-1">{item.label}</Text>
-              <Text className="text-muted-foreground">›</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+      {/* More options */}
+      <SectionHeader title="Mas opciones" />
+      <View
+        style={{
+          marginHorizontal: SPACING.xxl,
+          backgroundColor: t.bg.card,
+          borderRadius: RADIUS.xl,
+          overflow: 'hidden',
+          borderWidth: 1,
+          borderColor: t.border.subtle,
+        }}>
+        <MenuRow icon={<CalendarDays size={17} color={t.info}    />} label="Calendario"           onPress={() => router.push('/calendar' as any)} />
+        <MenuRow icon={<CreditCard   size={17} color={t.success} />} label="Planes y Pagos"       onPress={() => router.push('/payments' as any)} />
+        <MenuRow icon={<BookOpen     size={17} color={t.warning}  />} label="Biblioteca Ejercicios" onPress={() => router.push('/exercises' as any)} />
+        <MenuRow icon={<Lock         size={17} color={t.text.secondary} />} label="Privacidad" />
+        <MenuRow icon={<HelpCircle   size={17} color={t.text.secondary} />} label="Ayuda y Soporte" last />
+      </View>
 
-        {/* User info */}
-        <View
-          style={{
-            backgroundColor: '#f8fafc',
-            borderRadius: 16,
-            padding: 16,
-            marginBottom: 20,
-            borderWidth: 1,
-            borderColor: '#e2e8f0',
-          }}>
-          <Text className="text-muted-foreground text-xs font-medium mb-3 uppercase tracking-wider">
-            Información Personal
-          </Text>
-          {[
-            { label: 'Objetivo', value: user?.goal },
-            { label: 'Peso', value: `${user?.weight} kg` },
-            { label: 'Altura', value: `${user?.height} cm` },
-            { label: 'Miembro desde', value: user?.joinedAt },
-          ].map((info) => (
-            <View key={info.label} className="flex-row justify-between py-1.5">
-              <Text className="text-muted-foreground text-sm">{info.label}</Text>
-              <Text className="text-foreground text-sm font-medium">{info.value}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Logout */}
+      {/* Logout */}
+      <View style={{ paddingHorizontal: SPACING.xxl, paddingTop: SPACING.xl, paddingBottom: 48 }}>
         <TouchableOpacity
           onPress={handleLogout}
           style={{
-            backgroundColor: '#fee2e2',
-            borderRadius: 16,
-            paddingVertical: 16,
+            flexDirection: 'row',
             alignItems: 'center',
-            marginBottom: 40,
+            justifyContent: 'center',
+            gap: SPACING.md,
+            backgroundColor: t.dangerDim,
+            borderRadius: RADIUS.xl,
+            paddingVertical: SPACING.lg,
             borderWidth: 1,
-            borderColor: '#fecaca',
+            borderColor: t.danger,
           }}>
-          <Text style={{ color: '#dc2626', fontWeight: '700', fontSize: 15 }}>
-            🚪 Cerrar Sesión
+          <LogOut size={17} color={t.danger} />
+          <Text style={{ color: t.danger, fontWeight: '700', fontSize: FONT.base }}>
+            Cerrar Sesion
           </Text>
         </TouchableOpacity>
       </View>
