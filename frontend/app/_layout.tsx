@@ -7,24 +7,28 @@ import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind';
 import { ErrorBoundary } from './error-boundary';
 import { AppProvider, useAppStore } from '@/lib/store';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 
 function NavigationGuard() {
   const { isAuthenticated, isOnboarded } = useAppStore();
   const segments = useSegments();
   const router = useRouter();
-  const isMounted = useRef(false);
+  const [ready, setReady] = useState(false);
 
+  // Wait one tick after mount before navigating
   useEffect(() => {
-    isMounted.current = true;
+    const t = setTimeout(() => setReady(true), 0);
+    return () => clearTimeout(t);
   }, []);
 
   useEffect(() => {
-    if (!isMounted.current) return;
+    if (!ready) return;
 
     const inAuthGroup = segments[0] === 'auth';
+    const inTabs = segments[0] === '(tabs)';
+    const atRoot = segments.length === 0 || segments[0] === 'index';
 
-    if (!isOnboarded && segments[0] !== 'auth') {
+    if (!isOnboarded && !inAuthGroup) {
       router.replace('/auth/onboarding');
       return;
     }
@@ -34,10 +38,10 @@ function NavigationGuard() {
       return;
     }
 
-    if (isAuthenticated && inAuthGroup) {
+    if (isAuthenticated && (inAuthGroup || atRoot)) {
       router.replace('/(tabs)');
     }
-  }, [isAuthenticated, isOnboarded, segments, isMounted.current]);
+  }, [ready, isAuthenticated, isOnboarded, segments[0]]);
 
   return null;
 }
