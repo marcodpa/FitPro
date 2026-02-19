@@ -56,7 +56,41 @@ export interface UseVoiceCommandsReturn {
   toggle: () => void;
 }
 
-// Extend window type for SpeechRecognition
+// ─── Web Speech API type stubs (not in lib.dom.d.ts by default in RN) ─────────
+interface SpeechRecognitionEvent {
+  results: SpeechRecognitionResultList;
+}
+interface SpeechRecognitionResultList {
+  [index: number]: SpeechRecognitionResult;
+  length: number;
+}
+interface SpeechRecognitionResult {
+  [index: number]: SpeechRecognitionAlternative;
+  isFinal: boolean;
+  length: number;
+}
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
+}
+interface SpeechRecognitionErrorEvent {
+  error: string;
+  message: string;
+}
+interface SpeechRecognition {
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  maxAlternatives: number;
+  onstart: (() => void) | null;
+  onend: (() => void) | null;
+  onerror: ((e: SpeechRecognitionErrorEvent) => void) | null;
+  onresult: ((e: SpeechRecognitionEvent) => void) | null;
+  start(): void;
+  stop(): void;
+  abort(): void;
+}
+
 declare global {
   interface Window {
     SpeechRecognition: new () => SpeechRecognition;
