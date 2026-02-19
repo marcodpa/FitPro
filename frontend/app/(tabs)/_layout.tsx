@@ -1,7 +1,6 @@
 import { Tabs } from 'expo-router';
-import { useAppStore } from '@/lib/store';
+import { useAppStore, useTheme } from '@/lib/store';
 import { View, Text, Platform } from 'react-native';
-import { COLORS } from '@/lib/theme';
 import {
   Home,
   Dumbbell,
@@ -9,9 +8,6 @@ import {
   MessageSquare,
   User,
 } from 'lucide-react-native';
-
-const AC = COLORS.accent.DEFAULT;
-const INACTIVE = '#484848';
 
 function TabIcon({
   IconComponent,
@@ -22,6 +18,9 @@ function TabIcon({
   label: string;
   focused: boolean;
 }) {
+  const t = useTheme();
+  const inactiveColor = t.isDark ? '#484848' : '#aaaaaa';
+
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center', gap: 4, paddingTop: 6, minWidth: 52 }}>
       {focused ? (
@@ -30,24 +29,24 @@ function TabIcon({
             width: 44,
             height: 44,
             borderRadius: 14,
-            backgroundColor: COLORS.accent.dim,
+            backgroundColor: t.accentDim,
             alignItems: 'center',
             justifyContent: 'center',
             borderWidth: 1,
-            borderColor: COLORS.accent.dimMid,
+            borderColor: t.accent + '30',
           }}>
-          <IconComponent size={21} color={AC} strokeWidth={2.2} />
+          <IconComponent size={21} color={t.accent} strokeWidth={2.2} />
         </View>
       ) : (
         <View style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
-          <IconComponent size={21} color={INACTIVE} strokeWidth={1.7} />
+          <IconComponent size={21} color={inactiveColor} strokeWidth={1.7} />
         </View>
       )}
       <Text
         style={{
           fontSize: 10,
           fontWeight: focused ? '700' : '500',
-          color: focused ? AC : INACTIVE,
+          color: focused ? t.accent : inactiveColor,
           letterSpacing: 0.1,
         }}>
         {label}
@@ -58,13 +57,14 @@ function TabIcon({
 
 export default function TabsLayout() {
   const { isOffline } = useAppStore();
+  const t = useTheme();
 
   return (
     <>
       {isOffline && (
         <View
           style={{
-            backgroundColor: COLORS.warning,
+            backgroundColor: t.warning,
             paddingTop: 52,
             paddingBottom: 10,
             paddingHorizontal: 20,
@@ -86,8 +86,8 @@ export default function TabsLayout() {
             paddingBottom: Platform.OS === 'ios' ? 24 : 8,
             paddingTop: 4,
             borderTopWidth: 1,
-            borderTopColor: COLORS.bg.border,
-            backgroundColor: COLORS.bg.secondary,
+            borderTopColor: t.border.default,
+            backgroundColor: t.bg.secondary,
             elevation: 0,
             shadowOpacity: 0,
           },
