@@ -1,62 +1,91 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, Dimensions, StatusBar } from 'react-native';
+import React, { useRef } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Dimensions,
+  StatusBar,
+  Animated,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppStore } from '@/lib/store';
-import { Dumbbell, MessageSquare, Users, ArrowRight } from 'lucide-react-native';
+import { COLORS } from '@/lib/theme';
+import {
+  Dumbbell,
+  MessageSquare,
+  Users,
+  ArrowRight,
+  Zap,
+} from 'lucide-react-native';
 
 const { width, height } = Dimensions.get('window');
-const EM = '#10b981';
+const AC = COLORS.accent.DEFAULT;
 
 const SLIDES = [
   {
     id: 1,
     Icon: Dumbbell,
-    iconColor: EM,
-    iconBg: '#0a2e1e',
-    accent: '#10b981',
+    iconColor: AC,
+    bgTop: '#0d1f0d',
+    bgBottom: '#080808',
+    accentLine: AC,
+    tag: '01 / 03',
     title: 'Entrena con\nPropósito',
     subtitle:
-      'Rutinas personalizadas, seguimiento en tiempo real y cronómetro integrado para cada sesión.',
-    label: '01',
+      'Rutinas personalizadas, cronómetro integrado y seguimiento de cada serie en tiempo real.',
+    stat1: { value: '4', label: 'Rutinas activas' },
+    stat2: { value: '14', label: 'Sesiones completadas' },
   },
   {
     id: 2,
     Icon: MessageSquare,
-    iconColor: '#818cf8',
-    iconBg: '#1e1b4b',
-    accent: '#818cf8',
+    iconColor: COLORS.info,
+    bgTop: '#0d0d1f',
+    bgBottom: '#080808',
+    accentLine: COLORS.info,
+    tag: '02 / 03',
     title: 'Tu Entrenador,\nSiempre Contigo',
     subtitle:
-      'Chat directo con tu entrenador personal. Feedback inmediato y planes ajustados a ti.',
-    label: '02',
+      'Chat directo con tu entrenador. Feedback inmediato, ajuste de planes y soporte constante.',
+    stat1: { value: '1:1', label: 'Chat dedicado' },
+    stat2: { value: '24h', label: 'Respuesta media' },
   },
   {
     id: 3,
     Icon: Users,
-    iconColor: '#f97316',
-    iconBg: '#431407',
-    accent: '#f97316',
+    iconColor: COLORS.orange,
+    bgTop: '#1f0d08',
+    bgBottom: '#080808',
+    accentLine: COLORS.orange,
+    tag: '03 / 03',
     title: 'Comunidad\nFitness Real',
     subtitle:
-      'Comparte tu progreso, celebra logros e inspira a otros atletas en tu comunidad.',
-    label: '03',
+      'Comparte logros, celebra tu progreso e inspira a cientos de atletas en tu comunidad.',
+    stat1: { value: '+500', label: 'Atletas activos' },
+    stat2: { value: '5★', label: 'Valoración media' },
   },
 ];
 
 export default function OnboardingScreen() {
   const [current, setCurrent] = React.useState(0);
+  const anim = useRef(new Animated.Value(0)).current;
   const router = useRouter();
   const { setOnboarded } = useAppStore();
 
   const slide = SLIDES[current];
 
   const handleNext = () => {
-    if (current < SLIDES.length - 1) {
-      setCurrent(current + 1);
-    } else {
-      setOnboarded();
-      router.replace('/auth/login');
-    }
+    Animated.sequence([
+      Animated.timing(anim, { toValue: 1, duration: 120, useNativeDriver: true }),
+      Animated.timing(anim, { toValue: 0, duration: 0, useNativeDriver: true }),
+    ]).start(() => {
+      if (current < SLIDES.length - 1) {
+        setCurrent(current + 1);
+      } else {
+        setOnboarded();
+        router.replace('/auth/login');
+      }
+    });
   };
 
   const handleSkip = () => {
@@ -64,127 +93,234 @@ export default function OnboardingScreen() {
     router.replace('/auth/login');
   };
 
+  const opacity = anim.interpolate({ inputRange: [0, 1], outputRange: [1, 0] });
+
   return (
-    <View style={{ flex: 1, backgroundColor: '#0a0a0a' }}>
+    <View style={{ flex: 1, backgroundColor: COLORS.bg.primary }}>
       <StatusBar barStyle="light-content" />
 
-      {/* Skip */}
-      <TouchableOpacity
-        onPress={handleSkip}
-        style={{ position: 'absolute', top: 56, right: 24, zIndex: 10, paddingVertical: 6, paddingHorizontal: 14 }}>
-        <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, fontWeight: '600' }}>Omitir</Text>
-      </TouchableOpacity>
+      {/* Background gradient blocks */}
+      <View
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: height * 0.55,
+          backgroundColor: slide.bgTop,
+          opacity: 0.6,
+        }}
+      />
 
-      {/* Number label */}
+      {/* Top bar */}
       <View
         style={{
           position: 'absolute',
           top: 56,
-          left: 28,
-          zIndex: 10,
-        }}>
-        <Text style={{ color: 'rgba(255,255,255,0.2)', fontSize: 11, fontWeight: '700', letterSpacing: 2 }}>
-          {slide.label} / 03
-        </Text>
-      </View>
-
-      {/* Icon area */}
-      <View
-        style={{
-          flex: 1,
+          left: 0,
+          right: 0,
+          flexDirection: 'row',
+          justifyContent: 'space-between',
           alignItems: 'center',
-          justifyContent: 'center',
-          paddingTop: 100,
-          paddingBottom: 40,
-          paddingHorizontal: 32,
+          paddingHorizontal: 28,
+          zIndex: 20,
         }}>
-        {/* Big icon block */}
-        <View
-          style={{
-            width: 128,
-            height: 128,
-            borderRadius: 36,
-            backgroundColor: slide.iconBg,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: 48,
-            borderWidth: 1,
-            borderColor: slide.accent + '30',
-          }}>
-          <slide.Icon size={56} color={slide.iconColor} strokeWidth={1.6} />
+        {/* Brand mark */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 10,
+              backgroundColor: COLORS.accent.dim,
+              borderWidth: 1,
+              borderColor: COLORS.accent.dimMid,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+            <Zap size={16} color={AC} strokeWidth={2.2} />
+          </View>
+          <Text
+            style={{
+              color: COLORS.text.primary,
+              fontWeight: '800',
+              fontSize: 15,
+              letterSpacing: -0.3,
+            }}>
+            FitPro
+          </Text>
         </View>
-
-        {/* Accent line */}
-        <View
+        <TouchableOpacity
+          onPress={handleSkip}
           style={{
-            width: 40,
-            height: 3,
-            borderRadius: 2,
-            backgroundColor: slide.accent,
-            marginBottom: 24,
-            alignSelf: 'flex-start',
-          }}
-        />
-
-        <Text
-          style={{
-            color: '#fff',
-            fontSize: 36,
-            fontWeight: '800',
-            letterSpacing: -1.2,
-            lineHeight: 44,
-            alignSelf: 'flex-start',
-            marginBottom: 18,
+            backgroundColor: COLORS.white[10],
+            borderRadius: 20,
+            paddingHorizontal: 14,
+            paddingVertical: 7,
+            borderWidth: 1,
+            borderColor: COLORS.bg.border,
           }}>
-          {slide.title}
-        </Text>
-
-        <Text
-          style={{
-            color: 'rgba(255,255,255,0.5)',
-            fontSize: 16,
-            lineHeight: 24,
-            alignSelf: 'flex-start',
-            letterSpacing: -0.1,
-          }}>
-          {slide.subtitle}
-        </Text>
+          <Text style={{ color: COLORS.text.secondary, fontSize: 13, fontWeight: '600' }}>
+            Omitir
+          </Text>
+        </TouchableOpacity>
       </View>
 
-      {/* Bottom */}
-      <View style={{ paddingHorizontal: 28, paddingBottom: 52 }}>
-        {/* Progress dots */}
-        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 28 }}>
+      {/* Main content */}
+      <Animated.View style={{ flex: 1, opacity }}>
+        {/* Icon block */}
+        <View
+          style={{
+            flex: 1,
+            paddingTop: 130,
+            paddingHorizontal: 28,
+            justifyContent: 'space-between',
+            paddingBottom: 40,
+          }}>
+
+          {/* Large icon */}
+          <View style={{ alignItems: 'flex-start', gap: 32 }}>
+            <View
+              style={{
+                width: 100,
+                height: 100,
+                borderRadius: 28,
+                backgroundColor: COLORS.bg.secondary,
+                borderWidth: 1,
+                borderColor: COLORS.bg.borderStrong,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+              <slide.Icon size={48} color={slide.iconColor} strokeWidth={1.5} />
+            </View>
+
+            {/* Tag */}
+            <Text
+              style={{
+                color: COLORS.text.tertiary,
+                fontSize: 11,
+                fontWeight: '700',
+                letterSpacing: 2.5,
+              }}>
+              {slide.tag}
+            </Text>
+
+            {/* Accent line */}
+            <View
+              style={{
+                width: 36,
+                height: 3,
+                borderRadius: 2,
+                backgroundColor: slide.accentLine,
+              }}
+            />
+
+            {/* Title */}
+            <Text
+              style={{
+                color: COLORS.text.primary,
+                fontSize: 40,
+                fontWeight: '800',
+                letterSpacing: -1.5,
+                lineHeight: 48,
+              }}>
+              {slide.title}
+            </Text>
+
+            {/* Subtitle */}
+            <Text
+              style={{
+                color: COLORS.text.secondary,
+                fontSize: 16,
+                lineHeight: 25,
+                letterSpacing: -0.2,
+                maxWidth: width * 0.85,
+              }}>
+              {slide.subtitle}
+            </Text>
+          </View>
+
+          {/* Stats row */}
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            {[slide.stat1, slide.stat2].map((s, i) => (
+              <View
+                key={i}
+                style={{
+                  flex: 1,
+                  backgroundColor: COLORS.bg.secondary,
+                  borderRadius: 16,
+                  padding: 16,
+                  borderWidth: 1,
+                  borderColor: COLORS.bg.border,
+                  gap: 4,
+                }}>
+                <Text
+                  style={{
+                    color: slide.accentLine,
+                    fontSize: 22,
+                    fontWeight: '800',
+                    letterSpacing: -0.8,
+                  }}>
+                  {s.value}
+                </Text>
+                <Text
+                  style={{ color: COLORS.text.secondary, fontSize: 12, fontWeight: '500' }}>
+                  {s.label}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      </Animated.View>
+
+      {/* Bottom controls */}
+      <View style={{ paddingHorizontal: 28, paddingBottom: 52, gap: 20 }}>
+        {/* Progress bar */}
+        <View style={{ flexDirection: 'row', gap: 6 }}>
           {SLIDES.map((_, i) => (
             <View
               key={i}
               style={{
                 height: 3,
                 borderRadius: 2,
-                backgroundColor: i === current ? slide.accent : 'rgba(255,255,255,0.15)',
-                width: i === current ? 28 : 8,
+                backgroundColor:
+                  i === current ? slide.accentLine : COLORS.white[10],
+                flex: i === current ? 2 : 1,
               }}
             />
           ))}
         </View>
 
-        {/* CTA */}
+        {/* CTA button */}
         <TouchableOpacity
           onPress={handleNext}
-          activeOpacity={0.88}
+          activeOpacity={0.85}
           style={{
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
             gap: 10,
-            backgroundColor: slide.accent,
-            borderRadius: 16,
+            backgroundColor: current === SLIDES.length - 1 ? AC : COLORS.bg.elevated,
+            borderRadius: 18,
             paddingVertical: 18,
+            borderWidth: current === SLIDES.length - 1 ? 0 : 1,
+            borderColor: COLORS.bg.borderStrong,
           }}>
-          <Text style={{ color: '#fff', fontWeight: '800', fontSize: 16, letterSpacing: -0.3 }}>
-            {current < SLIDES.length - 1 ? 'Siguiente' : 'Comenzar ahora'}
+          <Text
+            style={{
+              color:
+                current === SLIDES.length - 1 ? COLORS.text.inverse : COLORS.text.primary,
+              fontWeight: '800',
+              fontSize: 16,
+              letterSpacing: -0.3,
+            }}>
+            {current < SLIDES.length - 1 ? 'Continuar' : 'Comenzar ahora'}
           </Text>
-          <ArrowRight size={18} color="#fff" strokeWidth={2.5} />
+          <ArrowRight
+            size={18}
+            color={current === SLIDES.length - 1 ? COLORS.text.inverse : COLORS.text.secondary}
+            strokeWidth={2.5}
+          />
         </TouchableOpacity>
       </View>
     </View>
