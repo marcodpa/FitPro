@@ -454,6 +454,7 @@ export default function ProfileTab() {
             )}
           </View>
         </View>
+      </ScrollView>
 
         {/* Voice Commands Sheet Modal */}
         <Modal
