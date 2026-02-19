@@ -81,7 +81,7 @@ function UserDashboard() {
           <ActivityIndicator color="#0d9e6e" size="large" />
         ) : todayWorkout ? (
           <TouchableOpacity
-            onPress={() => router.push(`/workout/${todayWorkout.id}`)}
+            onPress={() =>           router.push(`/workout/${todayWorkout.id}` as any)}
             style={{
               borderRadius: 20,
               overflow: 'hidden',
