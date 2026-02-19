@@ -185,6 +185,7 @@ export default function ProfileTab() {
   };
 
   return (
+    <>
     <ScrollView
       style={{ flex: 1, backgroundColor: t.bg.primary }}
       showsVerticalScrollIndicator={false}>
