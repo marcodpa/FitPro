@@ -117,7 +117,7 @@ function VoiceLayer() {
       transcript={voice.transcript}
       lastCommand={voice.lastCommand}
       isSupported={voice.isSupported}
-      onToggle={voice.toggle}
+        onActivate={voice.activate}
     />
   );
 }
