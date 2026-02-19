@@ -58,7 +58,7 @@ function RootLayoutInner() {
     : {
         ...DefaultTheme,
         colors: {
-          ...LightTheme.colors,
+          ...DefaultTheme.colors,
           background:   theme.bg.primary,
           card:         theme.bg.secondary,
           border:       theme.border.default,
