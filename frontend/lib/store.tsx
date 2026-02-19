@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { User, UserRole } from './types';
+import { getTheme, type Theme } from './theme';
 
 interface AppState {
   // Auth
@@ -13,6 +14,7 @@ interface AppState {
   isOffline: boolean;
   // Theme
   isDarkMode: boolean;
+  theme: Theme;
   // Voice
   voiceEnabled: boolean;
   // Actions
@@ -33,7 +35,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [isOnboarded, setIsOnboarded] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true); // default dark
   const [voiceEnabled, setVoiceEnabled] = useState(false);
 
   const login = useCallback((u: User, t: string) => {
@@ -76,6 +78,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         activeRole: user?.role ?? null,
         isOffline,
         isDarkMode,
+        theme: getTheme(isDarkMode),
         voiceEnabled,
         login,
         logout,
@@ -95,4 +98,9 @@ export function useAppStore() {
   const ctx = useContext(AppContext);
   if (!ctx) throw new Error('useAppStore must be used inside AppProvider');
   return ctx;
+}
+
+/** Shorthand hook — use when you only need theme tokens */
+export function useTheme() {
+  return useAppStore().theme;
 }
