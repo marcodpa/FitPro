@@ -1,13 +1,26 @@
 import '@/global.css';
 
-import { NAV_THEME } from '@/lib/theme';
+import { DarkTheme } from '@react-navigation/native';
 import { ThemeProvider } from '@react-navigation/native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useColorScheme } from 'nativewind';
 import { ErrorBoundary } from './error-boundary';
 import { AppProvider, useAppStore } from '@/lib/store';
 import React, { useEffect, useState } from 'react';
+
+// Force a consistent dark theme for the navigator chrome
+const FIT_DARK_THEME = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    background: '#080808',
+    card: '#111111',
+    border: '#2a2a2a',
+    text: '#f2f2f2',
+    primary: '#c8f65d',
+    notification: '#c8f65d',
+  },
+};
 
 function NavigationGuard() {
   const { isAuthenticated, isOnboarded } = useAppStore();
@@ -15,7 +28,6 @@ function NavigationGuard() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
 
-  // Wait one tick after mount before navigating
   useEffect(() => {
     const t = setTimeout(() => setReady(true), 0);
     return () => clearTimeout(t);
@@ -46,11 +58,9 @@ function NavigationGuard() {
 }
 
 function RootLayoutInner() {
-  const { colorScheme } = useColorScheme();
-
   return (
-    <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
-      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+    <ThemeProvider value={FIT_DARK_THEME}>
+      <StatusBar style="light" />
       <Stack screenOptions={{ headerShown: false }} />
       <NavigationGuard />
     </ThemeProvider>
