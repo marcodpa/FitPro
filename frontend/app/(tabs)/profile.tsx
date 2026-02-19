@@ -455,190 +455,189 @@ export default function ProfileTab() {
             )}
           </View>
         </View>
-      </ScrollView>
 
-        {/* Voice Commands Sheet Modal */}
-        <Modal
-          visible={showVoiceSheet}
-          transparent
-          animationType="slide"
-          onRequestClose={() => setShowVoiceSheet(false)}>
-          <TouchableOpacity
-            style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' }}
-            activeOpacity={1}
-            onPress={() => setShowVoiceSheet(false)}>
-            <View style={{ flex: 1 }} />
-          </TouchableOpacity>
-          <View
-            style={{
-              backgroundColor: t.bg.secondary,
-              borderTopLeftRadius: RADIUS.xxl,
-              borderTopRightRadius: RADIUS.xxl,
-              padding: SPACING.xxl,
-              paddingBottom: 40,
-              borderTopWidth: 1,
-              borderTopColor: t.border.subtle,
-            }}>
-            {/* Handle */}
-            <View
-              style={{
-                width: 36,
-                height: 4,
-                borderRadius: 2,
-                backgroundColor: t.border.strong,
-                alignSelf: 'center',
-                marginBottom: SPACING.xl,
-              }}
-            />
-            <Text
-              style={{
-                color: t.text.primary,
-                fontSize: FONT.lg,
-                fontWeight: '800',
-                letterSpacing: -0.3,
-                marginBottom: 4,
-              }}>
-              Comandos de Voz
-            </Text>
-            <Text style={{ color: t.text.secondary, fontSize: FONT.sm, marginBottom: SPACING.xl }}>
-              Habla claramente en espanol. El microfono escucha continuamente.
-            </Text>
-            {[
-              { group: 'Navegacion', items: ['"ir a inicio"', '"ir a rutinas"', '"ir a social"', '"ir a chat"', '"ir a perfil"'] },
-              { group: 'Entrenamiento', items: ['"empezar entrenamiento"', '"iniciar sesion"', '"entrenar"'] },
-              { group: 'Ajustes', items: ['"modo oscuro"', '"modo claro"', '"cerrar sesion"'] },
-            ].map((section) => (
-              <View key={section.group} style={{ marginBottom: SPACING.xl }}>
-                <Text
-                  style={{
-                    color: t.text.accent,
-                    fontSize: FONT.xs,
-                    fontWeight: '700',
-                    letterSpacing: 1.2,
-                    textTransform: 'uppercase',
-                    marginBottom: SPACING.md,
-                  }}>
-                  {section.group}
-                </Text>
-                <View
-                  style={{
-                    backgroundColor: t.bg.card,
-                    borderRadius: RADIUS.xl,
-                    overflow: 'hidden',
-                    borderWidth: 1,
-                    borderColor: t.border.subtle,
-                  }}>
-                  {section.items.map((cmd, i) => (
-                    <View
-                      key={cmd}
-                      style={{
-                        paddingHorizontal: SPACING.lg,
-                        paddingVertical: 12,
-                        borderBottomWidth: i < section.items.length - 1 ? 1 : 0,
-                        borderBottomColor: t.border.subtle,
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: SPACING.md,
-                      }}>
-                      <Mic size={13} color={t.accent} />
-                      <Text style={{ color: t.text.primary, fontSize: FONT.sm, fontWeight: '500' }}>
-                        {cmd}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            ))}
-            <TouchableOpacity
-              onPress={() => setShowVoiceSheet(false)}
-              style={{
-                backgroundColor: t.accent,
-                borderRadius: RADIUS.xl,
-                paddingVertical: SPACING.lg,
-                alignItems: 'center',
-              }}>
-              <Text style={{ color: t.accentText, fontWeight: '800', fontSize: FONT.base }}>
-                Entendido
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </Modal>
-
-      {/* Role switcher */}
-      <SectionHeader title="Cambiar Rol (Demo)" />
-      <View
-        style={{
-          flexDirection: 'row',
-          flexWrap: 'wrap',
-          gap: SPACING.sm,
-          paddingHorizontal: SPACING.xxl,
-        }}>
-        {ROLE_OPTIONS.map((r) => {
-          const isActive = activeRole === r.value;
-          return (
-            <TouchableOpacity
-              key={r.value}
-              onPress={() => setRole(r.value)}
-              style={{
-                paddingHorizontal: SPACING.lg,
-                paddingVertical: SPACING.md,
-                borderRadius: RADIUS.lg,
-                backgroundColor: isActive ? r.color : t.bg.card,
-                borderWidth: 1,
-                borderColor: isActive ? r.color : t.border.default,
-              }}>
-              <Text
-                style={{
-                  color: isActive ? '#fff' : t.text.secondary,
-                  fontWeight: '700',
-                  fontSize: FONT.sm,
-                }}>
-                {r.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      {/* More options */}
-      <SectionHeader title="Mas opciones" />
-      <View
-        style={{
-          marginHorizontal: SPACING.xxl,
-          backgroundColor: t.bg.card,
-          borderRadius: RADIUS.xl,
-          overflow: 'hidden',
-          borderWidth: 1,
-          borderColor: t.border.subtle,
-        }}>
-        <MenuRow icon={<CalendarDays size={17} color={t.info}    />} label="Calendario"           onPress={() => router.push('/calendar' as any)} />
-        <MenuRow icon={<CreditCard   size={17} color={t.success} />} label="Planes y Pagos"       onPress={() => router.push('/payments' as any)} />
-        <MenuRow icon={<BookOpen     size={17} color={t.warning}  />} label="Biblioteca Ejercicios" onPress={() => router.push('/exercises' as any)} />
-        <MenuRow icon={<Lock         size={17} color={t.text.secondary} />} label="Privacidad" />
-        <MenuRow icon={<HelpCircle   size={17} color={t.text.secondary} />} label="Ayuda y Soporte" last />
-      </View>
-
-      {/* Logout */}
-      <View style={{ paddingHorizontal: SPACING.xxl, paddingTop: SPACING.xl, paddingBottom: 48 }}>
-        <TouchableOpacity
-          onPress={handleLogout}
+        {/* Role switcher */}
+        <SectionHeader title="Cambiar Rol (Demo)" />
+        <View
           style={{
             flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: SPACING.md,
-            backgroundColor: t.dangerDim,
-            borderRadius: RADIUS.xl,
-            paddingVertical: SPACING.lg,
-            borderWidth: 1,
-            borderColor: t.danger,
+            flexWrap: 'wrap',
+            gap: SPACING.sm,
+            paddingHorizontal: SPACING.xxl,
           }}>
-          <LogOut size={17} color={t.danger} />
-          <Text style={{ color: t.danger, fontWeight: '700', fontSize: FONT.base }}>
-            Cerrar Sesion
-          </Text>
+          {ROLE_OPTIONS.map((r) => {
+            const isActive = activeRole === r.value;
+            return (
+              <TouchableOpacity
+                key={r.value}
+                onPress={() => setRole(r.value)}
+                style={{
+                  paddingHorizontal: SPACING.lg,
+                  paddingVertical: SPACING.md,
+                  borderRadius: RADIUS.lg,
+                  backgroundColor: isActive ? r.color : t.bg.card,
+                  borderWidth: 1,
+                  borderColor: isActive ? r.color : t.border.default,
+                }}>
+                <Text
+                  style={{
+                    color: isActive ? '#fff' : t.text.secondary,
+                    fontWeight: '700',
+                    fontSize: FONT.sm,
+                  }}>
+                  {r.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* More options */}
+        <SectionHeader title="Mas opciones" />
+        <View
+          style={{
+            marginHorizontal: SPACING.xxl,
+            backgroundColor: t.bg.card,
+            borderRadius: RADIUS.xl,
+            overflow: 'hidden',
+            borderWidth: 1,
+            borderColor: t.border.subtle,
+          }}>
+          <MenuRow icon={<CalendarDays size={17} color={t.info}    />} label="Calendario"           onPress={() => router.push('/calendar' as any)} />
+          <MenuRow icon={<CreditCard   size={17} color={t.success} />} label="Planes y Pagos"       onPress={() => router.push('/payments' as any)} />
+          <MenuRow icon={<BookOpen     size={17} color={t.warning}  />} label="Biblioteca Ejercicios" onPress={() => router.push('/exercises' as any)} />
+          <MenuRow icon={<Lock         size={17} color={t.text.secondary} />} label="Privacidad" />
+          <MenuRow icon={<HelpCircle   size={17} color={t.text.secondary} />} label="Ayuda y Soporte" last />
+        </View>
+
+        {/* Logout */}
+        <View style={{ paddingHorizontal: SPACING.xxl, paddingTop: SPACING.xl }}>
+          <TouchableOpacity
+            onPress={handleLogout}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: SPACING.md,
+              backgroundColor: t.dangerDim,
+              borderRadius: RADIUS.xl,
+              paddingVertical: SPACING.lg,
+              borderWidth: 1,
+              borderColor: t.danger,
+            }}>
+            <LogOut size={17} color={t.danger} />
+            <Text style={{ color: t.danger, fontWeight: '700', fontSize: FONT.base }}>
+              Cerrar Sesion
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+
+      {/* Voice Commands Sheet Modal — outside ScrollView, inside fragment */}
+      <Modal
+        visible={showVoiceSheet}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowVoiceSheet(false)}>
+        <TouchableOpacity
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' }}
+          activeOpacity={1}
+          onPress={() => setShowVoiceSheet(false)}>
+          <View style={{ flex: 1 }} />
         </TouchableOpacity>
-      </View>
-    </ScrollView>
+        <View
+          style={{
+            backgroundColor: t.bg.secondary,
+            borderTopLeftRadius: RADIUS.xxl,
+            borderTopRightRadius: RADIUS.xxl,
+            padding: SPACING.xxl,
+            paddingBottom: 40,
+            borderTopWidth: 1,
+            borderTopColor: t.border.subtle,
+          }}>
+          <View
+            style={{
+              width: 36,
+              height: 4,
+              borderRadius: 2,
+              backgroundColor: t.border.strong,
+              alignSelf: 'center',
+              marginBottom: SPACING.xl,
+            }}
+          />
+          <Text
+            style={{
+              color: t.text.primary,
+              fontSize: FONT.lg,
+              fontWeight: '800',
+              letterSpacing: -0.3,
+              marginBottom: 4,
+            }}>
+            Comandos de Voz
+          </Text>
+          <Text style={{ color: t.text.secondary, fontSize: FONT.sm, marginBottom: SPACING.xl }}>
+            Habla claramente en espanol. El microfono escucha continuamente.
+          </Text>
+          {[
+            { group: 'Navegacion', items: ['"ir a inicio"', '"ir a rutinas"', '"ir a social"', '"ir a chat"', '"ir a perfil"'] },
+            { group: 'Entrenamiento', items: ['"empezar entrenamiento"', '"iniciar sesion"', '"entrenar"'] },
+            { group: 'Ajustes', items: ['"modo oscuro"', '"modo claro"', '"cerrar sesion"'] },
+          ].map((section) => (
+            <View key={section.group} style={{ marginBottom: SPACING.xl }}>
+              <Text
+                style={{
+                  color: t.text.accent,
+                  fontSize: FONT.xs,
+                  fontWeight: '700',
+                  letterSpacing: 1.2,
+                  textTransform: 'uppercase',
+                  marginBottom: SPACING.md,
+                }}>
+                {section.group}
+              </Text>
+              <View
+                style={{
+                  backgroundColor: t.bg.card,
+                  borderRadius: RADIUS.xl,
+                  overflow: 'hidden',
+                  borderWidth: 1,
+                  borderColor: t.border.subtle,
+                }}>
+                {section.items.map((cmd, i) => (
+                  <View
+                    key={cmd}
+                    style={{
+                      paddingHorizontal: SPACING.lg,
+                      paddingVertical: 12,
+                      borderBottomWidth: i < section.items.length - 1 ? 1 : 0,
+                      borderBottomColor: t.border.subtle,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: SPACING.md,
+                    }}>
+                    <Mic size={13} color={t.accent} />
+                    <Text style={{ color: t.text.primary, fontSize: FONT.sm, fontWeight: '500' }}>
+                      {cmd}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          ))}
+          <TouchableOpacity
+            onPress={() => setShowVoiceSheet(false)}
+            style={{
+              backgroundColor: t.accent,
+              borderRadius: RADIUS.xl,
+              paddingVertical: SPACING.lg,
+              alignItems: 'center',
+            }}>
+            <Text style={{ color: t.accentText, fontWeight: '800', fontSize: FONT.base }}>
+              Entendido
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+    </>
   );
 }
