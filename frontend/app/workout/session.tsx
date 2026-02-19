@@ -60,8 +60,8 @@ export default function WorkoutSessionScreen() {
       ).start();
       timerRef.current = setInterval(() => setElapsed((e) => e + 1), 1000);
     } else if (phase === 'resting') {
+      pulseAnim.stopAnimation();
       pulseAnim.setValue(1);
-      Animated.stopAnimation(pulseAnim);
       if (timerRef.current) clearInterval(timerRef.current);
       setElapsed(0);
       const currentEx = routine?.exercises[currentExIdx];
