@@ -25,7 +25,7 @@ function NavigationGuard() {
     if (!ready) return;
 
     const inAuthGroup = segments[0] === 'auth';
-    const atRoot = segments.length === 0;
+    const atRoot = (segments as string[]).length === 0;
 
     if (!isOnboarded && !inAuthGroup) {
       router.replace('/auth/onboarding');
