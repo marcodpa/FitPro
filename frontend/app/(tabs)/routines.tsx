@@ -8,10 +8,12 @@ import {
   ActivityIndicator,
   TextInput,
   Dimensions,
+  StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppStore } from '@/lib/store';
 import { FakeRoutineService } from '@/lib/services';
+import { COLORS } from '@/lib/theme';
 import type { Routine } from '@/lib/types';
 import {
   Search,
@@ -19,208 +21,307 @@ import {
   Clock,
   Dumbbell,
   ChevronRight,
-  Filter,
-  TrendingUp,
   Flame,
-  Star,
+  Layers,
+  Activity,
+  Target,
+  Play,
+  X,
+  SlidersHorizontal,
 } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
-const EM = '#10b981';
+const AC = COLORS.accent.DEFAULT;
 
-// Difficulty config
-const DIFF = {
-  beginner: { label: 'Principiante', color: '#10b981', bg: '#d1fae5', dot: '#10b981' },
-  intermediate: { label: 'Intermedio', color: '#f59e0b', bg: '#fef3c7', dot: '#f59e0b' },
-  advanced: { label: 'Avanzado', color: '#ef4444', bg: '#fee2e2', dot: '#ef4444' },
-};
+// ─── Config ───────────────────────────────────────────────────────────────────
+const DIFFICULTY_CFG = {
+  beginner: { label: 'Principiante', color: COLORS.beginner },
+  intermediate: { label: 'Intermedio', color: COLORS.intermediate },
+  advanced: { label: 'Avanzado', color: COLORS.advanced },
+} as const;
 
-const CATEGORIES = ['Todos', 'Fuerza', 'Cardio', 'Full Body', 'Core'];
+type DiffKey = keyof typeof DIFFICULTY_CFG;
 
-// Category icon mapping
+const CATEGORIES = ['Todos', 'Fuerza', 'Cardio', 'Full Body', 'Core'] as const;
+
 const CAT_ICONS: Record<string, React.ComponentType<{ size: number; color: string; strokeWidth: number }>> = {
-  Todos: Filter,
+  Todos: Layers,
   Fuerza: Dumbbell,
   Cardio: Flame,
-  'Full Body': TrendingUp,
-  Core: Star,
+  'Full Body': Activity,
+  Core: Target,
 };
 
-// ─── SKELETON CARD ────────────────────────────────────────────────────────────
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
 function SkeletonCard() {
   return (
     <View
       style={{
-        backgroundColor: '#fff',
+        backgroundColor: COLORS.bg.secondary,
         borderRadius: 20,
         overflow: 'hidden',
-        marginBottom: 14,
+        marginBottom: 12,
         borderWidth: 1,
-        borderColor: '#f0f0f0',
+        borderColor: COLORS.bg.border,
       }}>
-      <View style={{ width: '100%', height: 160, backgroundColor: '#f4f4f5' }} />
-      <View style={{ padding: 16, gap: 8 }}>
-        <View style={{ height: 16, width: '60%', backgroundColor: '#f4f4f5', borderRadius: 8 }} />
-        <View style={{ height: 12, width: '90%', backgroundColor: '#f4f4f5', borderRadius: 6 }} />
-        <View style={{ flexDirection: 'row', gap: 12, marginTop: 4 }}>
-          <View style={{ height: 10, width: 60, backgroundColor: '#f4f4f5', borderRadius: 5 }} />
-          <View style={{ height: 10, width: 80, backgroundColor: '#f4f4f5', borderRadius: 5 }} />
+      <View style={{ width: '100%', height: 180, backgroundColor: COLORS.bg.tertiary }} />
+      <View style={{ padding: 16, gap: 10 }}>
+        <View style={{ height: 15, width: '55%', backgroundColor: COLORS.bg.elevated, borderRadius: 8 }} />
+        <View style={{ height: 12, width: '85%', backgroundColor: COLORS.bg.elevated, borderRadius: 6 }} />
+        <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
+          <View style={{ height: 10, width: 64, backgroundColor: COLORS.bg.elevated, borderRadius: 5 }} />
+          <View style={{ height: 10, width: 80, backgroundColor: COLORS.bg.elevated, borderRadius: 5 }} />
         </View>
       </View>
     </View>
   );
 }
 
-// ─── ROUTINE CARD ─────────────────────────────────────────────────────────────
+// ─── Routine Card ─────────────────────────────────────────────────────────────
 function RoutineCard({ routine, onPress }: { routine: Routine; onPress: () => void }) {
-  const diff = DIFF[routine.difficulty];
+  const diff = DIFFICULTY_CFG[routine.difficulty as DiffKey];
+  const muscles = Array.from(new Set(routine.exercises.map((e) => e.exercise.muscle))).slice(0, 3);
 
   return (
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.88}
       style={{
-        backgroundColor: '#fff',
+        backgroundColor: COLORS.bg.secondary,
         borderRadius: 20,
         overflow: 'hidden',
-        marginBottom: 14,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.08,
-        shadowRadius: 12,
-        elevation: 4,
+        marginBottom: 12,
         borderWidth: 1,
-        borderColor: '#f0f0f0',
+        borderColor: COLORS.bg.border,
       }}>
+
       {/* Image */}
       <View style={{ position: 'relative' }}>
         <Image
           source={{ uri: routine.imageUrl }}
-          style={{ width: '100%', height: 162 }}
+          style={{ width: '100%', height: 190 }}
           resizeMode="cover"
         />
-        {/* Dark gradient overlay bottom */}
+        {/* Dark gradient */}
         <View
           style={{
             position: 'absolute',
             bottom: 0,
             left: 0,
             right: 0,
-            height: 64,
-            backgroundColor: 'rgba(0,0,0,0.38)',
+            height: 120,
+            backgroundColor: 'rgba(0,0,0,0)',
+            // Simulate gradient with two overlapping views
           }}
         />
-        {/* Difficulty badge */}
+        <View
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundColor: 'rgba(8,8,8,0.35)',
+          }}
+        />
+
+        {/* Top badges */}
         <View
           style={{
             position: 'absolute',
             top: 12,
             left: 12,
             flexDirection: 'row',
-            alignItems: 'center',
-            gap: 5,
-            backgroundColor: 'rgba(0,0,0,0.55)',
-            borderRadius: 20,
-            paddingHorizontal: 10,
-            paddingVertical: 5,
-            borderWidth: 1,
-            borderColor: 'rgba(255,255,255,0.12)',
+            gap: 7,
           }}>
-          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: diff.dot }} />
-          <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700', letterSpacing: 0.2 }}>
-            {diff.label}
-          </Text>
+          {/* Difficulty */}
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 5,
+              backgroundColor: 'rgba(8,8,8,0.7)',
+              borderRadius: 20,
+              paddingHorizontal: 10,
+              paddingVertical: 5,
+              borderWidth: 1,
+              borderColor: diff.color + '40',
+            }}>
+            <View
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: 3,
+                backgroundColor: diff.color,
+              }}
+            />
+            <Text
+              style={{
+                color: '#fff',
+                fontSize: 10,
+                fontWeight: '700',
+                letterSpacing: 0.3,
+              }}>
+              {diff.label.toUpperCase()}
+            </Text>
+          </View>
+
+          {/* Category */}
+          <View
+            style={{
+              backgroundColor: COLORS.accent.dim,
+              borderRadius: 20,
+              paddingHorizontal: 10,
+              paddingVertical: 5,
+              borderWidth: 1,
+              borderColor: COLORS.accent.dimMid,
+            }}>
+            <Text
+              style={{ color: AC, fontSize: 10, fontWeight: '800', letterSpacing: 0.5 }}>
+              {routine.category.toUpperCase()}
+            </Text>
+          </View>
         </View>
-        {/* Category badge */}
-        <View
+
+        {/* Play button */}
+        <TouchableOpacity
+          onPress={onPress}
+          activeOpacity={0.88}
           style={{
             position: 'absolute',
             top: 12,
             right: 12,
-            backgroundColor: EM,
-            borderRadius: 8,
-            paddingHorizontal: 10,
-            paddingVertical: 5,
+            width: 42,
+            height: 42,
+            borderRadius: 13,
+            backgroundColor: AC,
+            alignItems: 'center',
+            justifyContent: 'center',
           }}>
-          <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>
-            {routine.category}
+          <Play size={17} color={COLORS.text.inverse} strokeWidth={2.5} />
+        </TouchableOpacity>
+
+        {/* Bottom gradient name */}
+        <View
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            padding: 14,
+            paddingTop: 40,
+            backgroundColor: 'rgba(8,8,8,0.6)',
+          }}>
+          <Text
+            style={{
+              color: '#fff',
+              fontWeight: '800',
+              fontSize: 18,
+              letterSpacing: -0.5,
+              lineHeight: 22,
+            }}
+            numberOfLines={1}>
+            {routine.name}
           </Text>
         </View>
       </View>
 
       {/* Content */}
-      <View style={{ padding: 16, gap: 10 }}>
-        {/* Title row */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <Text
-            style={{
-              color: '#0f0f0f',
-              fontWeight: '800',
-              fontSize: 16,
-              flex: 1,
-              letterSpacing: -0.4,
-              lineHeight: 21,
-            }}
-            numberOfLines={2}>
-            {routine.name}
-          </Text>
-          <View
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 10,
-              backgroundColor: '#f4f4f5',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginLeft: 10,
-            }}>
-            <ChevronRight size={16} color="#71717a" strokeWidth={2.5} />
-          </View>
-        </View>
-
+      <View style={{ padding: 16, gap: 12 }}>
         {/* Description */}
         <Text
-          style={{ color: '#71717a', fontSize: 13, lineHeight: 18, letterSpacing: -0.1 }}
+          style={{
+            color: COLORS.text.secondary,
+            fontSize: 13,
+            lineHeight: 19,
+            letterSpacing: -0.1,
+          }}
           numberOfLines={2}>
           {routine.description}
         </Text>
 
+        {/* Muscle tags */}
+        <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
+          {muscles.map((m) => (
+            <View
+              key={m}
+              style={{
+                backgroundColor: COLORS.bg.tertiary,
+                borderRadius: 8,
+                paddingHorizontal: 9,
+                paddingVertical: 4,
+                borderWidth: 1,
+                borderColor: COLORS.bg.border,
+              }}>
+              <Text
+                style={{
+                  color: COLORS.text.secondary,
+                  fontSize: 11,
+                  fontWeight: '600',
+                }}>
+                {m}
+              </Text>
+            </View>
+          ))}
+        </View>
+
         {/* Divider */}
-        <View style={{ height: 1, backgroundColor: '#f4f4f5' }} />
+        <View style={{ height: 1, backgroundColor: COLORS.bg.border }} />
 
         {/* Stats row */}
-        <View style={{ flexDirection: 'row', gap: 20 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <View
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: 8,
-                backgroundColor: '#f0fdf4',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-              <Clock size={13} color={EM} strokeWidth={2.2} />
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}>
+          <View style={{ flexDirection: 'row', gap: 16 }}>
+            {/* Duration */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 8,
+                  backgroundColor: COLORS.accent.dim,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                <Clock size={13} color={AC} strokeWidth={2.2} />
+              </View>
+              <Text style={{ color: COLORS.text.primary, fontSize: 13, fontWeight: '600' }}>
+                {routine.duration} min
+              </Text>
             </View>
-            <Text style={{ color: '#3f3f46', fontSize: 12, fontWeight: '600' }}>
-              {routine.duration} min
-            </Text>
+
+            {/* Exercises */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 8,
+                  backgroundColor: COLORS.accent.dim,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                <Dumbbell size={13} color={AC} strokeWidth={2.2} />
+              </View>
+              <Text style={{ color: COLORS.text.primary, fontSize: 13, fontWeight: '600' }}>
+                {routine.exercises.length} ejercicios
+              </Text>
+            </View>
           </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <View
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: 8,
-                backgroundColor: '#f0fdf4',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-              <Dumbbell size={13} color={EM} strokeWidth={2.2} />
-            </View>
-            <Text style={{ color: '#3f3f46', fontSize: 12, fontWeight: '600' }}>
-              {routine.exercises.length} ejercicios
-            </Text>
+
+          <View
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: 9,
+              backgroundColor: COLORS.bg.elevated,
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderWidth: 1,
+              borderColor: COLORS.bg.borderStrong,
+            }}>
+            <ChevronRight size={15} color={COLORS.text.tertiary} strokeWidth={2.5} />
           </View>
         </View>
       </View>
@@ -228,23 +329,77 @@ function RoutineCard({ routine, onPress }: { routine: Routine; onPress: () => vo
   );
 }
 
-// ─── MAIN SCREEN ──────────────────────────────────────────────────────────────
+// ─── Empty State ──────────────────────────────────────────────────────────────
+function EmptyState({ isTrainer }: { isTrainer: boolean }) {
+  return (
+    <View
+      style={{
+        backgroundColor: COLORS.bg.secondary,
+        borderRadius: 20,
+        padding: 40,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderStyle: 'dashed',
+        borderColor: COLORS.bg.borderStrong,
+        marginTop: 20,
+      }}>
+      <View
+        style={{
+          width: 64,
+          height: 64,
+          borderRadius: 20,
+          backgroundColor: COLORS.bg.elevated,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: 16,
+          borderWidth: 1,
+          borderColor: COLORS.bg.border,
+        }}>
+        <Dumbbell size={28} color={COLORS.text.tertiary} strokeWidth={1.5} />
+      </View>
+      <Text
+        style={{
+          color: COLORS.text.primary,
+          fontWeight: '800',
+          fontSize: 17,
+          letterSpacing: -0.4,
+          marginBottom: 8,
+        }}>
+        Sin resultados
+      </Text>
+      <Text
+        style={{
+          color: COLORS.text.secondary,
+          fontSize: 13,
+          textAlign: 'center',
+          lineHeight: 19,
+          maxWidth: 230,
+        }}>
+        {isTrainer
+          ? 'Crea tu primera rutina con el botón Nueva.'
+          : 'Tu entrenador aún no ha asignado rutinas para ti.'}
+      </Text>
+    </View>
+  );
+}
+
+// ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function RoutinesTab() {
   const { user, activeRole } = useAppStore();
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [filtered, setFiltered] = useState<Routine[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [activeCategory, setActiveCategory] = useState('Todos');
   const [searchFocused, setSearchFocused] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<string>('Todos');
   const router = useRouter();
+  const isTrainer = activeRole === 'trainer';
 
   useEffect(() => {
     if (!user) return;
-    const fn =
-      activeRole === 'trainer'
-        ? FakeRoutineService.getByTrainerId(user.id)
-        : FakeRoutineService.getByUserId(user.id);
+    const fn = isTrainer
+      ? FakeRoutineService.getByTrainerId(user.id)
+      : FakeRoutineService.getByUserId(user.id);
     fn.then((data) => {
       setRoutines(data);
       setFiltered(data);
@@ -253,62 +408,97 @@ export default function RoutinesTab() {
 
   useEffect(() => {
     let res = routines;
-    if (activeCategory !== 'Todos') res = res.filter((r) => r.category === activeCategory);
+    if (activeCategory !== 'Todos')
+      res = res.filter((r) => r.category === activeCategory);
     if (search.trim())
-      res = res.filter((r) => r.name.toLowerCase().includes(search.toLowerCase()));
+      res = res.filter((r) =>
+        r.name.toLowerCase().includes(search.toLowerCase())
+      );
     setFiltered(res);
   }, [search, activeCategory, routines]);
 
+  const clearSearch = () => setSearch('');
+
   return (
-    <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
-      {/* ── Fixed Header ─────────────────────────────────────── */}
+    <View style={{ flex: 1, backgroundColor: COLORS.bg.primary }}>
+      <StatusBar barStyle="light-content" />
+
+      {/* ── Fixed Header ────────────────────────────────── */}
       <View
         style={{
-          backgroundColor: '#0a0a0a',
-          paddingTop: 58,
-          paddingBottom: 20,
+          backgroundColor: COLORS.bg.primary,
+          paddingTop: 60,
+          paddingBottom: 16,
           paddingHorizontal: 24,
+          borderBottomWidth: 1,
+          borderBottomColor: COLORS.bg.border,
         }}>
+
         {/* Title row */}
         <View
           style={{
             flexDirection: 'row',
             justifyContent: 'space-between',
-            alignItems: 'center',
+            alignItems: 'flex-start',
             marginBottom: 18,
           }}>
-          <View>
-            <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, fontWeight: '500' }}>
-              {activeRole === 'trainer' ? 'Tus programas' : 'Tu plan de entrenamiento'}
+          <View style={{ gap: 4 }}>
+            <Text style={{ color: COLORS.text.secondary, fontSize: 13, fontWeight: '500' }}>
+              {isTrainer ? 'Tus programas' : 'Tu plan de entrenamiento'}
             </Text>
             <Text
               style={{
-                color: '#fff',
-                fontSize: 26,
+                color: COLORS.text.primary,
+                fontSize: 30,
                 fontWeight: '800',
-                letterSpacing: -0.8,
-                marginTop: 2,
+                letterSpacing: -1,
               }}>
               Rutinas
             </Text>
           </View>
-          {activeRole === 'trainer' && (
+
+          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', marginTop: 4 }}>
+            {/* Filter btn */}
             <TouchableOpacity
-              onPress={() => router.push('/routines/create' as any)}
-              activeOpacity={0.85}
               style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 6,
-                backgroundColor: EM,
+                width: 40,
+                height: 40,
                 borderRadius: 12,
-                paddingHorizontal: 14,
-                paddingVertical: 10,
+                backgroundColor: COLORS.bg.secondary,
+                borderWidth: 1,
+                borderColor: COLORS.bg.border,
+                alignItems: 'center',
+                justifyContent: 'center',
               }}>
-              <Plus size={16} color="#fff" strokeWidth={2.5} />
-              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Nueva</Text>
+              <SlidersHorizontal size={17} color={COLORS.text.secondary} strokeWidth={2} />
             </TouchableOpacity>
-          )}
+
+            {isTrainer && (
+              <TouchableOpacity
+                onPress={() => router.push('/routines/create' as any)}
+                activeOpacity={0.85}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 6,
+                  backgroundColor: AC,
+                  borderRadius: 12,
+                  paddingHorizontal: 14,
+                  paddingVertical: 10,
+                }}>
+                <Plus size={16} color={COLORS.text.inverse} strokeWidth={2.8} />
+                <Text
+                  style={{
+                    color: COLORS.text.inverse,
+                    fontWeight: '800',
+                    fontSize: 13,
+                    letterSpacing: -0.2,
+                  }}>
+                  Nueva
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         {/* Search bar */}
@@ -317,46 +507,65 @@ export default function RoutinesTab() {
             flexDirection: 'row',
             alignItems: 'center',
             gap: 10,
-            backgroundColor: searchFocused ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.1)',
+            backgroundColor: COLORS.bg.secondary,
             borderRadius: 14,
             paddingHorizontal: 14,
             paddingVertical: 12,
-            borderWidth: 1,
-            borderColor: searchFocused ? EM : 'rgba(255,255,255,0.08)',
+            borderWidth: 1.5,
+            borderColor: searchFocused ? AC : COLORS.bg.border,
           }}>
-          <Search size={17} color="rgba(255,255,255,0.5)" strokeWidth={2} />
+          <Search
+            size={16}
+            color={searchFocused ? AC : COLORS.text.tertiary}
+            strokeWidth={2}
+          />
           <TextInput
             value={search}
             onChangeText={setSearch}
             onFocus={() => setSearchFocused(true)}
             onBlur={() => setSearchFocused(false)}
             placeholder="Buscar rutinas..."
-            placeholderTextColor="rgba(255,255,255,0.4)"
+            placeholderTextColor={COLORS.text.tertiary}
             style={{
               flex: 1,
-              color: '#fff',
+              color: COLORS.text.primary,
               fontSize: 15,
               fontWeight: '500',
               padding: 0,
             }}
           />
+          {search.length > 0 && (
+            <TouchableOpacity onPress={clearSearch} activeOpacity={0.7}>
+              <View
+                style={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: 10,
+                  backgroundColor: COLORS.bg.elevated,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                <X size={11} color={COLORS.text.secondary} strokeWidth={2.5} />
+              </View>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
-      {/* ── Category Filter ───────────────────────────────────── */}
+      {/* ── Category Filter ─────────────────────────────── */}
       <View
         style={{
-          backgroundColor: '#fff',
+          backgroundColor: COLORS.bg.primary,
           borderBottomWidth: 1,
-          borderBottomColor: '#f0f0f0',
+          borderBottomColor: COLORS.bg.border,
         }}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 18, paddingVertical: 12, gap: 8 }}>
+          contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 12, gap: 8 }}>
           {CATEGORIES.map((cat) => {
             const active = activeCategory === cat;
-            const CatIcon = CAT_ICONS[cat] ?? Filter;
+            const CatIcon = CAT_ICONS[cat] ?? Layers;
             return (
               <TouchableOpacity
                 key={cat}
@@ -367,21 +576,23 @@ export default function RoutinesTab() {
                   alignItems: 'center',
                   gap: 6,
                   paddingHorizontal: 14,
-                  paddingVertical: 8,
-                  borderRadius: 10,
-                  backgroundColor: active ? '#0a0a0a' : '#f4f4f5',
+                  paddingVertical: 9,
+                  borderRadius: 11,
+                  backgroundColor: active ? AC : COLORS.bg.secondary,
+                  borderWidth: 1,
+                  borderColor: active ? AC : COLORS.bg.border,
                 }}>
                 <CatIcon
                   size={13}
-                  color={active ? '#fff' : '#71717a'}
+                  color={active ? COLORS.text.inverse : COLORS.text.secondary}
                   strokeWidth={2.2}
                 />
                 <Text
                   style={{
-                    color: active ? '#fff' : '#71717a',
-                    fontWeight: active ? '700' : '500',
+                    color: active ? COLORS.text.inverse : COLORS.text.secondary,
+                    fontWeight: active ? '800' : '600',
                     fontSize: 13,
-                    letterSpacing: 0.1,
+                    letterSpacing: active ? -0.1 : 0,
                   }}>
                   {cat}
                 </Text>
@@ -391,7 +602,7 @@ export default function RoutinesTab() {
         </ScrollView>
       </View>
 
-      {/* ── List ─────────────────────────────────────────────── */}
+      {/* ── List ────────────────────────────────────────── */}
       {loading ? (
         <ScrollView
           style={{ flex: 1 }}
@@ -403,69 +614,64 @@ export default function RoutinesTab() {
       ) : (
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 32 }}
+          contentContainerStyle={{
+            paddingHorizontal: 20,
+            paddingTop: 20,
+            paddingBottom: 40,
+          }}
           showsVerticalScrollIndicator={false}>
-          {/* Count info */}
-          {!loading && (
+
+          {/* Count + diff legend */}
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 16,
+            }}>
             <Text
               style={{
-                color: '#a1a1aa',
+                color: COLORS.text.tertiary,
                 fontSize: 12,
-                fontWeight: '600',
-                marginBottom: 16,
-                letterSpacing: 0.3,
+                fontWeight: '700',
+                letterSpacing: 0.5,
               }}>
-              {filtered.length} {filtered.length === 1 ? 'rutina' : 'rutinas'}
-              {activeCategory !== 'Todos' ? ` en ${activeCategory}` : ''}
+              {filtered.length} {filtered.length === 1 ? 'RUTINA' : 'RUTINAS'}
             </Text>
-          )}
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              {(
+                [
+                  { key: 'beginner', label: 'Fácil' },
+                  { key: 'intermediate', label: 'Medio' },
+                  { key: 'advanced', label: 'Difícil' },
+                ] as { key: DiffKey; label: string }[]
+              ).map(({ key, label }) => (
+                <View
+                  key={key}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <View
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: 3,
+                      backgroundColor: DIFFICULTY_CFG[key].color,
+                    }}
+                  />
+                  <Text
+                    style={{
+                      color: COLORS.text.tertiary,
+                      fontSize: 10,
+                      fontWeight: '600',
+                    }}>
+                    {label}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
 
           {filtered.length === 0 ? (
-            <View
-              style={{
-                backgroundColor: '#fff',
-                borderRadius: 20,
-                padding: 40,
-                alignItems: 'center',
-                borderWidth: 1,
-                borderColor: '#f0f0f0',
-                marginTop: 20,
-              }}>
-              <View
-                style={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: 20,
-                  backgroundColor: '#f4f4f5',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: 16,
-                }}>
-                <Dumbbell size={28} color="#d4d4d8" strokeWidth={1.8} />
-              </View>
-              <Text
-                style={{
-                  color: '#0f0f0f',
-                  fontWeight: '800',
-                  fontSize: 17,
-                  letterSpacing: -0.4,
-                  marginBottom: 6,
-                }}>
-                Sin resultados
-              </Text>
-              <Text
-                style={{
-                  color: '#a1a1aa',
-                  fontSize: 13,
-                  textAlign: 'center',
-                  lineHeight: 18,
-                  maxWidth: 220,
-                }}>
-                {activeRole === 'trainer'
-                  ? 'Crea tu primera rutina con el boton Nueva'
-                  : 'Tu entrenador aun no ha asignado rutinas'}
-              </Text>
-            </View>
+            <EmptyState isTrainer={isTrainer} />
           ) : (
             filtered.map((routine) => (
               <RoutineCard
