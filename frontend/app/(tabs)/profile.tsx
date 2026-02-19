@@ -373,26 +373,193 @@ export default function ProfileTab() {
           borderWidth: 1,
           borderColor: t.border.subtle,
         }}>
-        <ToggleRow
-          icon={<Moon size={17} color={t.info} />}
-          label="Modo Oscuro"
-          value={isDarkMode}
-          onToggle={toggleDarkMode}
-        />
-        <ToggleRow
-          icon={<WifiOff size={17} color={t.warning} />}
-          label="Modo Offline"
-          value={isOffline}
-          onToggle={toggleOffline}
-        />
-        <ToggleRow
-          icon={<Mic size={17} color={t.success} />}
-          label="Comandos de Voz"
-          value={voiceEnabled}
-          onToggle={toggleVoice}
-          last
-        />
-      </View>
+          <ToggleRow
+            icon={<Moon size={17} color={t.info} />}
+            label="Modo Oscuro"
+            value={isDarkMode}
+            onToggle={toggleDarkMode}
+          />
+          <ToggleRow
+            icon={<WifiOff size={17} color={t.warning} />}
+            label="Modo Offline"
+            value={isOffline}
+            onToggle={toggleOffline}
+          />
+          {/* Voice commands toggle + info */}
+          <View
+            style={{
+              backgroundColor: t.bg.card,
+              borderTopWidth: 1,
+              borderTopColor: t.border.subtle,
+            }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: SPACING.lg,
+                paddingHorizontal: SPACING.lg,
+                paddingVertical: 15,
+              }}>
+              <View
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: RADIUS.md,
+                  backgroundColor: voiceEnabled ? 'rgba(200,246,93,0.12)' : t.bg.tertiary,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderWidth: voiceEnabled ? 1 : 0,
+                  borderColor: voiceEnabled ? t.accent : 'transparent',
+                }}>
+                <Mic size={17} color={voiceEnabled ? t.accent : t.success} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: t.text.primary, fontSize: FONT.base, fontWeight: '500' }}>
+                  Comandos de Voz
+                </Text>
+                {voiceEnabled && (
+                  <TouchableOpacity onPress={() => setShowVoiceSheet(true)}>
+                    <Text style={{ color: t.text.accent, fontSize: FONT.xs, marginTop: 2, fontWeight: '600' }}>
+                      Ver comandos disponibles
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+              <Switch
+                value={voiceEnabled}
+                onValueChange={toggleVoice}
+                trackColor={{ false: t.border.strong, true: t.accent }}
+                thumbColor={voiceEnabled ? t.accentText : t.text.secondary}
+              />
+            </View>
+            {voiceEnabled && (
+              <View
+                style={{
+                  marginHorizontal: SPACING.lg,
+                  marginBottom: SPACING.lg,
+                  backgroundColor: 'rgba(200,246,93,0.06)',
+                  borderRadius: RADIUS.lg,
+                  padding: SPACING.md,
+                  borderWidth: 1,
+                  borderColor: 'rgba(200,246,93,0.2)',
+                }}>
+                <Text style={{ color: t.text.accent, fontSize: FONT.xs, fontWeight: '700', letterSpacing: 0.5, marginBottom: 4 }}>
+                  MICROFONO ACTIVO
+                </Text>
+                <Text style={{ color: t.text.secondary, fontSize: FONT.xs, lineHeight: 16 }}>
+                  Di "ir a rutinas", "modo oscuro", "empezar entrenamiento" y mas. El icono del microfono aparece en pantalla.
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* Voice Commands Sheet Modal */}
+        <Modal
+          visible={showVoiceSheet}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowVoiceSheet(false)}>
+          <TouchableOpacity
+            style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' }}
+            activeOpacity={1}
+            onPress={() => setShowVoiceSheet(false)}>
+            <View style={{ flex: 1 }} />
+          </TouchableOpacity>
+          <View
+            style={{
+              backgroundColor: t.bg.secondary,
+              borderTopLeftRadius: RADIUS.xxl,
+              borderTopRightRadius: RADIUS.xxl,
+              padding: SPACING.xxl,
+              paddingBottom: 40,
+              borderTopWidth: 1,
+              borderTopColor: t.border.subtle,
+            }}>
+            {/* Handle */}
+            <View
+              style={{
+                width: 36,
+                height: 4,
+                borderRadius: 2,
+                backgroundColor: t.border.strong,
+                alignSelf: 'center',
+                marginBottom: SPACING.xl,
+              }}
+            />
+            <Text
+              style={{
+                color: t.text.primary,
+                fontSize: FONT.lg,
+                fontWeight: '800',
+                letterSpacing: -0.3,
+                marginBottom: 4,
+              }}>
+              Comandos de Voz
+            </Text>
+            <Text style={{ color: t.text.secondary, fontSize: FONT.sm, marginBottom: SPACING.xl }}>
+              Habla claramente en espanol. El microfono escucha continuamente.
+            </Text>
+            {[
+              { group: 'Navegacion', items: ['"ir a inicio"', '"ir a rutinas"', '"ir a social"', '"ir a chat"', '"ir a perfil"'] },
+              { group: 'Entrenamiento', items: ['"empezar entrenamiento"', '"iniciar sesion"', '"entrenar"'] },
+              { group: 'Ajustes', items: ['"modo oscuro"', '"modo claro"', '"cerrar sesion"'] },
+            ].map((section) => (
+              <View key={section.group} style={{ marginBottom: SPACING.xl }}>
+                <Text
+                  style={{
+                    color: t.text.accent,
+                    fontSize: FONT.xs,
+                    fontWeight: '700',
+                    letterSpacing: 1.2,
+                    textTransform: 'uppercase',
+                    marginBottom: SPACING.md,
+                  }}>
+                  {section.group}
+                </Text>
+                <View
+                  style={{
+                    backgroundColor: t.bg.card,
+                    borderRadius: RADIUS.xl,
+                    overflow: 'hidden',
+                    borderWidth: 1,
+                    borderColor: t.border.subtle,
+                  }}>
+                  {section.items.map((cmd, i) => (
+                    <View
+                      key={cmd}
+                      style={{
+                        paddingHorizontal: SPACING.lg,
+                        paddingVertical: 12,
+                        borderBottomWidth: i < section.items.length - 1 ? 1 : 0,
+                        borderBottomColor: t.border.subtle,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: SPACING.md,
+                      }}>
+                      <Mic size={13} color={t.accent} />
+                      <Text style={{ color: t.text.primary, fontSize: FONT.sm, fontWeight: '500' }}>
+                        {cmd}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ))}
+            <TouchableOpacity
+              onPress={() => setShowVoiceSheet(false)}
+              style={{
+                backgroundColor: t.accent,
+                borderRadius: RADIUS.xl,
+                paddingVertical: SPACING.lg,
+                alignItems: 'center',
+              }}>
+              <Text style={{ color: t.accentText, fontWeight: '800', fontSize: FONT.base }}>
+                Entendido
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </Modal>
 
       {/* Role switcher */}
       <SectionHeader title="Cambiar Rol (Demo)" />
