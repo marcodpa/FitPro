@@ -1,49 +1,59 @@
 /**
  * useVoiceCommands
  * ----------------
- * Web Speech API-based voice command engine.
- * Works in Chrome, Edge, Safari 16+.
+ * Web Speech API-based voice command engine with WAKE WORD support.
  *
- * Commands supported:
- *   Navigation   → "ir a inicio" | "ir a rutinas" | "ir a social" | "ir a chat" | "ir a perfil"
- *   Actions      → "modo oscuro" | "modo claro" | "cerrar sesion" | "buscar"
- *   Workout      → "empezar entrenamiento" | "iniciar sesion"
+ * Flow:
+ *   1. Starts in "standby" mode — runs a silent background loop listening ONLY
+ *      for the wake word "ey fit pro" (or variants).
+ *   2. When wake word detected → transitions to "listening" (full command mode)
+ *      + plays a short beep to confirm activation.
+ *   3. After a command is recognized (or 6s silence) → back to standby.
  *
- * Returns state + imperative controls. The component layer renders UI.
+ * Status values:
+ *   standby     → background wake-word loop running (tiny mic icon, dim)
+ *   listening   → full command mode (mic lit up, pulse ring)
+ *   processing  → command matched, showing result label
+ *   error       → microphone permission denied
+ *   unsupported → browser has no Web Speech API
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 
-export type VoiceStatus = 'idle' | 'listening' | 'processing' | 'error' | 'unsupported';
+export type VoiceStatus = 'standby' | 'idle' | 'listening' | 'processing' | 'error' | 'unsupported';
 
 export interface VoiceCommand {
   pattern: RegExp;
-  label: string;         // shown in transcript bubble
-  action: string;        // dispatched to the handler
+  label: string;
+  action: string;
 }
 
 export const COMMANDS: VoiceCommand[] = [
   // Navigation
-  { pattern: /\binicio\b|\bhome\b|\bprincipal\b/i,           label: 'Ir a Inicio',              action: 'nav:home' },
-  { pattern: /\brutinas?\b/i,                                  label: 'Ir a Rutinas',             action: 'nav:routines' },
-  { pattern: /\bsocial\b|\bcomunidad\b/i,                      label: 'Ir a Social',              action: 'nav:social' },
-  { pattern: /\bchat\b|\bmensajes?\b/i,                        label: 'Ir a Chat',                action: 'nav:chat' },
-  { pattern: /\bperfil\b|\bprofil\b/i,                         label: 'Ir a Perfil',              action: 'nav:profile' },
+  { pattern: /\binicio\b|\bhome\b|\bprincipal\b/i,             label: 'Ir a Inicio',           action: 'nav:home' },
+  { pattern: /\brutinas?\b/i,                                   label: 'Ir a Rutinas',          action: 'nav:routines' },
+  { pattern: /\bsocial\b|\bcomunidad\b/i,                       label: 'Ir a Social',           action: 'nav:social' },
+  { pattern: /\bchat\b|\bmensajes?\b/i,                         label: 'Ir a Chat',             action: 'nav:chat' },
+  { pattern: /\bperfil\b|\bprofil\b/i,                          label: 'Ir a Perfil',           action: 'nav:profile' },
   // Theme
-  { pattern: /\boscur[oa]\b|\bnoche\b|\bdark\b/i,              label: 'Modo Oscuro',              action: 'theme:dark' },
-  { pattern: /\bclar[oa]\b|\bluz\b|\blight\b/i,                label: 'Modo Claro',               action: 'theme:light' },
+  { pattern: /\boscur[oa]\b|\bnoche\b|\bdark\b/i,               label: 'Modo Oscuro',           action: 'theme:dark' },
+  { pattern: /\bclar[oa]\b|\bluz\b|\blight\b/i,                 label: 'Modo Claro',            action: 'theme:light' },
   // Workout
   { pattern: /\bempez[ae]r?\b.*\bentren\b|\biniciar?\b.*\bsesi[oó]n\b|\bentren[ae]r?\b/i,
-                                                                label: 'Iniciar Entrenamiento',    action: 'nav:workout' },
+                                                                  label: 'Iniciar Entrenamiento', action: 'nav:workout' },
   // Session
-  { pattern: /\bcerrar sesi[oó]n\b|\bsalir\b|\bdesconectar\b/i, label: 'Cerrar Sesión',          action: 'auth:logout' },
+  { pattern: /\bcerrar sesi[oó]n\b|\bsalir\b|\bdesconectar\b/i, label: 'Cerrar Sesión',        action: 'auth:logout' },
 ];
+
+// Wake word patterns — catches: "ey fit pro", "hey fit pro", "oye fit pro", "ei fit pro"
+const WAKE_WORD = /\b(ey|hey|oye|ei)\s+(fit\s+pro|fitpro)\b/i;
 
 export interface UseVoiceCommandsOptions {
   enabled: boolean;
   lang?: string;
   onCommand: (action: string, label: string) => void;
   onTranscript?: (text: string, interim: boolean) => void;
+  onWakeWord?: () => void;
 }
 
 export interface UseVoiceCommandsReturn {
@@ -51,12 +61,11 @@ export interface UseVoiceCommandsReturn {
   transcript: string;
   lastCommand: string | null;
   isSupported: boolean;
-  start: () => void;
+  activate: () => void;   // manually trigger command mode (tap mic)
   stop: () => void;
-  toggle: () => void;
 }
 
-// ─── Web Speech API type stubs (not in lib.dom.d.ts by default in RN) ─────────
+// ─── Web Speech API type stubs ────────────────────────────────────────────────
 interface SpeechRecognitionEvent {
   results: SpeechRecognitionResultList;
 }
@@ -98,67 +107,91 @@ declare global {
   }
 }
 
+// Play a short confirmation beep using Web Audio API
+function playBeep(freq = 880, durationMs = 120, volume = 0.18) {
+  try {
+    if (typeof window === 'undefined') return;
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = freq;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(volume, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + durationMs / 1000);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + durationMs / 1000);
+  } catch {
+    // AudioContext not available — silently skip
+  }
+}
+
+function makeSR(lang: string): SpeechRecognition | null {
+  if (typeof window === 'undefined') return null;
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return null;
+  const r = new SR();
+  r.lang = lang;
+  r.interimResults = true;
+  r.continuous = false;
+  r.maxAlternatives = 3;
+  return r;
+}
+
 export function useVoiceCommands({
   enabled,
   lang = 'es-ES',
   onCommand,
   onTranscript,
+  onWakeWord,
 }: UseVoiceCommandsOptions): UseVoiceCommandsReturn {
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
-  const [status, setStatus] = useState<VoiceStatus>('idle');
-  const [transcript, setTranscript] = useState('');
-  const [lastCommand, setLastCommand] = useState<string | null>(null);
-
   const isSupported =
     typeof window !== 'undefined' &&
     (!!window.SpeechRecognition || !!window.webkitSpeechRecognition);
 
-  const buildRecognition = useCallback((): SpeechRecognition | null => {
-    if (!isSupported) return null;
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const r = new SR();
-    r.lang = lang;
-    r.interimResults = true;
-    r.continuous = false; // restart manually for reliability
-    r.maxAlternatives = 3;
-    return r;
-  }, [isSupported, lang]);
+  const [status, setStatus] = useState<VoiceStatus>('idle');
+  const [transcript, setTranscript] = useState('');
+  const [lastCommand, setLastCommand] = useState<string | null>(null);
 
-  const stop = useCallback(() => {
-    recognitionRef.current?.stop();
-    recognitionRef.current = null;
-    setStatus('idle');
-  }, []);
+  // Refs to hold the two recognizer instances
+  const wakeRef    = useRef<SpeechRecognition | null>(null);
+  const cmdRef     = useRef<SpeechRecognition | null>(null);
+  const modeRef    = useRef<'standby' | 'command'>('standby');
+  const enabledRef = useRef(enabled);
+  const cmdTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const start = useCallback(() => {
-    if (!isSupported) { setStatus('unsupported'); return; }
-    if (status === 'listening') return;
+  useEffect(() => { enabledRef.current = enabled; }, [enabled]);
 
-    const r = buildRecognition();
+  // ── Command mode recognizer ──────────────────────────────────────────────
+  const startCommandMode = useCallback(() => {
+    if (modeRef.current === 'command') return;
+    modeRef.current = 'command';
+
+    // Stop wake-word loop
+    wakeRef.current?.abort();
+    wakeRef.current = null;
+
+    playBeep(880, 100);
+    setStatus('listening');
+    onWakeWord?.();
+
+    const r = makeSR(lang);
     if (!r) return;
-    recognitionRef.current = r;
+    cmdRef.current = r;
+
+    // Auto-return to standby after 6s if no speech
+    cmdTimeoutRef.current = setTimeout(() => {
+      cmdRef.current?.stop();
+    }, 6000);
 
     r.onstart = () => setStatus('listening');
-    r.onend   = () => {
-      // auto-restart if still enabled
-      if (enabled && recognitionRef.current) {
-        setStatus('idle');
-        recognitionRef.current = null;
-        setTimeout(() => {
-          if (enabled) start();
-        }, 400);
-      } else {
-        setStatus('idle');
-        recognitionRef.current = null;
-      }
-    };
-    r.onerror = (e) => {
-      if (e.error === 'not-allowed') { setStatus('error'); return; }
-      if (e.error === 'no-speech')   { /* silently restart */ return; }
-      setStatus('idle');
-    };
 
-    r.onresult = (event: SpeechRecognitionEvent) => {
+    r.onresult = (event) => {
+      if (cmdTimeoutRef.current) {
+        clearTimeout(cmdTimeoutRef.current);
+        cmdTimeoutRef.current = null;
+      }
       const resultList = event.results;
       const last: SpeechRecognitionResult = resultList[resultList.length - 1];
       const text = last[0].transcript.trim();
@@ -169,46 +202,117 @@ export function useVoiceCommands({
 
       if (isFinal) {
         setStatus('processing');
-        // Match against known commands
+        let matched = false;
         for (const cmd of COMMANDS) {
           if (cmd.pattern.test(text)) {
             setLastCommand(cmd.label);
             onCommand(cmd.action, cmd.label);
+            matched = true;
             break;
           }
         }
+        if (!matched) setLastCommand(null);
         setTimeout(() => {
           setTranscript('');
-          setStatus('idle');
+          cmdRef.current?.stop();
         }, 1200);
       }
     };
 
-    try {
-      r.start();
-    } catch {
-      setStatus('idle');
-    }
-  }, [isSupported, status, enabled, buildRecognition, onCommand, onTranscript]);
+    r.onerror = (e) => {
+      if (e.error === 'not-allowed') { setStatus('error'); return; }
+    };
 
-  // Auto-start/stop based on `enabled`
+    r.onend = () => {
+      cmdRef.current = null;
+      modeRef.current = 'standby';
+      if (cmdTimeoutRef.current) {
+        clearTimeout(cmdTimeoutRef.current);
+        cmdTimeoutRef.current = null;
+      }
+      setTranscript('');
+      setStatus('standby');
+      // Re-start wake word loop
+      if (enabledRef.current) setTimeout(startWakeLoop, 300);
+    };
+
+    try { r.start(); } catch { modeRef.current = 'standby'; }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang, onCommand, onTranscript, onWakeWord]);
+
+  // ── Wake-word loop ───────────────────────────────────────────────────────
+  const startWakeLoop = useCallback(() => {
+    if (!enabledRef.current || !isSupported) return;
+    if (modeRef.current === 'command') return;
+
+    const r = makeSR(lang);
+    if (!r) return;
+    wakeRef.current = r;
+
+    r.onstart  = () => setStatus('standby');
+    r.onerror  = (e) => {
+      if (e.error === 'not-allowed') setStatus('error');
+      // no-speech / aborted → just restart
+    };
+    r.onend    = () => {
+      wakeRef.current = null;
+      if (enabledRef.current && modeRef.current !== 'command') {
+        setTimeout(startWakeLoop, 300);
+      }
+    };
+    r.onresult = (event) => {
+      const resultList = event.results;
+      const last: SpeechRecognitionResult = resultList[resultList.length - 1];
+      const text = last[0].transcript.trim();
+
+      if (WAKE_WORD.test(text)) {
+        wakeRef.current?.abort();
+        wakeRef.current = null;
+        startCommandMode();
+      }
+    };
+
+    try { r.start(); } catch { /* ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSupported, lang, startCommandMode]);
+
+  // ── Lifecycle: start / stop based on `enabled` ──────────────────────────
   useEffect(() => {
     if (enabled && isSupported) {
-      start();
+      modeRef.current = 'standby';
+      startWakeLoop();
     } else {
-      stop();
+      wakeRef.current?.abort();
+      wakeRef.current = null;
+      cmdRef.current?.abort();
+      cmdRef.current = null;
+      modeRef.current = 'standby';
+      setStatus('idle');
+      setTranscript('');
     }
     return () => {
-      recognitionRef.current?.stop();
-      recognitionRef.current = null;
+      wakeRef.current?.abort();
+      cmdRef.current?.abort();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled]);
 
-  const toggle = useCallback(() => {
-    if (status === 'listening') stop();
-    else start();
-  }, [status, start, stop]);
+  // Manual tap → go straight to command mode
+  const activate = useCallback(() => {
+    if (!isSupported) { setStatus('unsupported'); return; }
+    if (modeRef.current === 'command') return;
+    startCommandMode();
+  }, [isSupported, startCommandMode]);
 
-  return { status, transcript, lastCommand, isSupported, start, stop, toggle };
+  const stop = useCallback(() => {
+    wakeRef.current?.abort();
+    cmdRef.current?.abort();
+    wakeRef.current = null;
+    cmdRef.current = null;
+    modeRef.current = 'standby';
+    setStatus('idle');
+    setTranscript('');
+  }, []);
+
+  return { status, transcript, lastCommand, isSupported, activate, stop };
 }
