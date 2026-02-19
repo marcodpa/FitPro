@@ -1,29 +1,14 @@
 import '@/global.css';
 
-import { DarkTheme } from '@react-navigation/native';
-import { ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, LightTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ErrorBoundary } from './error-boundary';
 import { AppProvider, useAppStore } from '@/lib/store';
 import React, { useEffect, useState } from 'react';
 
-// Force a consistent dark theme for the navigator chrome
-const FIT_DARK_THEME = {
-  ...DarkTheme,
-  colors: {
-    ...DarkTheme.colors,
-    background: '#080808',
-    card: '#111111',
-    border: '#2a2a2a',
-    text: '#f2f2f2',
-    primary: '#c8f65d',
-    notification: '#c8f65d',
-  },
-};
-
 function NavigationGuard() {
-  const { isAuthenticated, isOnboarded } = useAppStore();
+  const { isAuthenticated, isOnboarded, isDarkMode } = useAppStore();
   const segments = useSegments();
   const router = useRouter();
   const [ready, setReady] = useState(false);
@@ -35,7 +20,6 @@ function NavigationGuard() {
 
   useEffect(() => {
     if (!ready) return;
-
     const inAuthGroup = segments[0] === 'auth';
     const atRoot = (segments as string[]).length === 0;
 
@@ -43,12 +27,10 @@ function NavigationGuard() {
       router.replace('/auth/onboarding');
       return;
     }
-
     if (isOnboarded && !isAuthenticated && !inAuthGroup) {
       router.replace('/auth/login');
       return;
     }
-
     if (isAuthenticated && (inAuthGroup || atRoot)) {
       router.replace('/(tabs)');
     }
@@ -58,9 +40,37 @@ function NavigationGuard() {
 }
 
 function RootLayoutInner() {
+  const { isDarkMode, theme } = useAppStore();
+
+  const navTheme = isDarkMode
+    ? {
+        ...DarkTheme,
+        colors: {
+          ...DarkTheme.colors,
+          background:   theme.bg.primary,
+          card:         theme.bg.secondary,
+          border:       theme.border.default,
+          text:         theme.text.primary,
+          primary:      theme.accent,
+          notification: theme.accent,
+        },
+      }
+    : {
+        ...LightTheme,
+        colors: {
+          ...LightTheme.colors,
+          background:   theme.bg.primary,
+          card:         theme.bg.secondary,
+          border:       theme.border.default,
+          text:         theme.text.primary,
+          primary:      theme.accent,
+          notification: theme.accent,
+        },
+      };
+
   return (
-    <ThemeProvider value={FIT_DARK_THEME}>
-      <StatusBar style="light" />
+    <ThemeProvider value={navTheme}>
+      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false }} />
       <NavigationGuard />
     </ThemeProvider>
