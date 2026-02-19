@@ -1,22 +1,32 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  ActivityIndicator,
+} from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAppStore } from '@/lib/store';
+import { useAppStore, useTheme } from '@/lib/store';
 import { FakeChatService } from '@/lib/services';
 import type { Conversation } from '@/lib/types';
+import { MessageSquare, Dumbbell, User, ChevronRight } from 'lucide-react-native';
+import { FONT, RADIUS, SPACING } from '@/lib/theme';
 
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return 'Ahora';
   if (mins < 60) return `${mins}m`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h`;
-  return `${Math.floor(hours / 24)}d`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  return `${Math.floor(hrs / 24)}d`;
 }
 
 export default function ChatTab() {
   const { user } = useAppStore();
+  const t = useTheme();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -28,114 +38,159 @@ export default function ChatTab() {
       .finally(() => setLoading(false));
   }, [user]);
 
-  const getOtherParticipant = (conv: Conversation) => {
-    return conv.participants.find((p) => p.id !== user?.id);
-  };
+  const getOther = (conv: Conversation) =>
+    conv.participants.find((p) => p.id !== user?.id);
 
   return (
-    <View className="flex-1 bg-background">
+    <View style={{ flex: 1, backgroundColor: t.bg.primary }}>
       {/* Header */}
       <View
         style={{
-          backgroundColor: '#0d9e6e',
+          backgroundColor: t.bg.secondary,
           paddingTop: 56,
-          paddingBottom: 24,
-          paddingHorizontal: 24,
-          borderBottomLeftRadius: 28,
-          borderBottomRightRadius: 28,
+          paddingBottom: SPACING.xxl,
+          paddingHorizontal: SPACING.xxl,
+          borderBottomWidth: 1,
+          borderBottomColor: t.border.subtle,
         }}>
-        <Text className="text-white font-bold" style={{ fontSize: 26 }}>
-          Mensajes 💬
+        <Text style={{ color: t.text.secondary, fontSize: FONT.xs, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 }}>
+          FitPro
         </Text>
-        <Text className="text-white/70 text-sm mt-1">
-          {conversations.length} conversación{conversations.length !== 1 ? 'es' : ''}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+          <Text style={{ color: t.text.primary, fontSize: FONT.xxxl, fontWeight: '800', letterSpacing: -0.5 }}>
+            Mensajes
+          </Text>
+          {conversations.length > 0 && (
+            <View
+              style={{
+                backgroundColor: t.accentDim,
+                borderRadius: RADIUS.full,
+                paddingHorizontal: SPACING.md,
+                paddingVertical: 4,
+                borderWidth: 1,
+                borderColor: t.accent,
+              }}>
+              <Text style={{ color: t.text.accent, fontSize: FONT.xs, fontWeight: '700' }}>
+                {conversations.length} activos
+              </Text>
+            </View>
+          )}
+        </View>
       </View>
 
       {loading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#0d9e6e" />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator size="large" color={t.accent} />
         </View>
       ) : conversations.length === 0 ? (
-        <View className="flex-1 items-center justify-center px-8">
-          <Text style={{ fontSize: 64, marginBottom: 16 }}>💬</Text>
-          <Text className="text-foreground font-bold text-xl text-center">Sin conversaciones</Text>
-          <Text className="text-muted-foreground text-center mt-2">
-            Cuando tengas un entrenador asignado, podrás chatear aquí.
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40 }}>
+          <View
+            style={{
+              width: 72,
+              height: 72,
+              borderRadius: RADIUS.xl,
+              backgroundColor: t.bg.tertiary,
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: SPACING.lg,
+              borderWidth: 1,
+              borderColor: t.border.default,
+            }}>
+            <MessageSquare size={32} color={t.text.tertiary} />
+          </View>
+          <Text style={{ color: t.text.primary, fontWeight: '700', fontSize: FONT.xl, textAlign: 'center', marginBottom: 8 }}>
+            Sin mensajes
+          </Text>
+          <Text style={{ color: t.text.secondary, textAlign: 'center', fontSize: FONT.base, lineHeight: 22 }}>
+            Cuando tengas un entrenador asignado, podras chatear aqui.
           </Text>
         </View>
       ) : (
-        <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
-          {conversations.map((conv) => {
-            const other = getOtherParticipant(conv);
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{ paddingTop: SPACING.md, paddingBottom: 32 }}
+          showsVerticalScrollIndicator={false}>
+          {conversations.map((conv, i) => {
+            const other = getOther(conv);
             if (!other) return null;
+            const isTrainer = other.role === 'trainer';
+            const lastMsg = conv.lastMessage;
+            const isRoutineMsg = lastMsg?.type === 'routine';
+
             return (
               <TouchableOpacity
                 key={conv.id}
                 onPress={() => router.push(`/chat/${conv.id}` as any)}
                 style={{
-                  backgroundColor: '#fff',
-                  borderRadius: 18,
-                  padding: 16,
                   flexDirection: 'row',
                   alignItems: 'center',
-                  gap: 14,
-                  marginBottom: 10,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.06,
-                  shadowRadius: 8,
-                  elevation: 3,
-                  borderWidth: 1,
-                  borderColor: '#f1f5f9',
+                  gap: SPACING.lg,
+                  paddingHorizontal: SPACING.xxl,
+                  paddingVertical: SPACING.lg,
+                  backgroundColor: 'transparent',
+                  borderBottomWidth: i < conversations.length - 1 ? 1 : 0,
+                  borderBottomColor: t.border.subtle,
                 }}>
                 {/* Avatar */}
                 <View style={{ position: 'relative' }}>
                   <Image
                     source={{ uri: other.avatar }}
-                    style={{ width: 52, height: 52, borderRadius: 26 }}
+                    style={{
+                      width: 54,
+                      height: 54,
+                      borderRadius: 27,
+                      backgroundColor: t.bg.tertiary,
+                      borderWidth: 2,
+                      borderColor: isTrainer ? t.accentDim : t.border.subtle,
+                    }}
                   />
+                  {/* Online dot */}
                   <View
                     style={{
                       position: 'absolute',
-                      bottom: 0,
-                      right: 0,
-                      width: 14,
-                      height: 14,
+                      bottom: 1,
+                      right: 1,
+                      width: 13,
+                      height: 13,
                       borderRadius: 7,
-                      backgroundColor: '#22c55e',
+                      backgroundColor: t.success,
                       borderWidth: 2,
-                      borderColor: '#fff',
+                      borderColor: t.bg.primary,
                     }}
                   />
                 </View>
+
                 {/* Info */}
-                <View className="flex-1">
-                  <View className="flex-row justify-between items-center">
-                    <Text className="text-foreground font-bold text-base">{other.name}</Text>
-                    <Text className="text-muted-foreground text-xs">
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+                    <Text style={{ color: t.text.primary, fontWeight: '700', fontSize: FONT.md }}>
+                      {other.name}
+                    </Text>
+                    <Text style={{ color: t.text.tertiary, fontSize: FONT.xs }}>
                       {timeAgo(conv.updatedAt)}
                     </Text>
                   </View>
+
+                  {/* Role badge */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+                    {isTrainer ? (
+                      <Dumbbell size={10} color={t.text.accent} />
+                    ) : (
+                      <User size={10} color={t.text.tertiary} />
+                    )}
+                    <Text style={{ color: isTrainer ? t.text.accent : t.text.tertiary, fontSize: 10, fontWeight: '600' }}>
+                      {isTrainer ? 'Entrenador' : 'Atleta'}
+                    </Text>
+                  </View>
+
                   <Text
-                    className="text-muted-foreground text-sm mt-0.5"
                     numberOfLines={1}
-                    style={{ flex: 1 }}>
-                    {conv.lastMessage?.type === 'routine'
-                      ? '📋 Compartió una rutina'
-                      : conv.lastMessage?.text ?? '...'}
-                  </Text>
-                  <Text
-                    style={{
-                      color:
-                        other.role === 'trainer' ? '#0d9e6e' : '#64748b',
-                      fontSize: 11,
-                      fontWeight: '600',
-                      marginTop: 3,
-                    }}>
-                    {other.role === 'trainer' ? '🏋️ Entrenador' : '🏃 Atleta'}
+                    style={{ color: t.text.secondary, fontSize: FONT.sm }}>
+                    {isRoutineMsg ? 'Compartio una rutina' : (lastMsg?.text ?? '...')}
                   </Text>
                 </View>
+
+                <ChevronRight size={16} color={t.text.tertiary} />
               </TouchableOpacity>
             );
           })}
