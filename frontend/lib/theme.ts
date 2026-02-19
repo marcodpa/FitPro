@@ -1,81 +1,93 @@
-import { DarkTheme, DefaultTheme, type Theme } from '@react-navigation/native';
+// ─── FitPro Design System ─────────────────────────────────────────────────────
+// Single source of truth for all design tokens
 
-export const THEME = {
-  light: {
-    background: 'hsl(220 20% 97%)',
-    foreground: 'hsl(220 25% 10%)',
-    card: 'hsl(0 0% 100%)',
-    cardForeground: 'hsl(220 25% 10%)',
-    popover: 'hsl(0 0% 100%)',
-    popoverForeground: 'hsl(220 25% 10%)',
-    primary: 'hsl(158 64% 40%)',
-    primaryForeground: 'hsl(0 0% 100%)',
-    secondary: 'hsl(220 14% 93%)',
-    secondaryForeground: 'hsl(220 25% 20%)',
-    muted: 'hsl(220 14% 93%)',
-    mutedForeground: 'hsl(220 10% 50%)',
-    accent: 'hsl(158 64% 40%)',
-    accentForeground: 'hsl(0 0% 100%)',
-    destructive: 'hsl(0 84% 60%)',
-    border: 'hsl(220 14% 88%)',
-    input: 'hsl(220 14% 88%)',
-    ring: 'hsl(158 64% 40%)',
-    radius: '0.75rem',
-    chart1: 'hsl(158 64% 40%)',
-    chart2: 'hsl(25 95% 55%)',
-    chart3: 'hsl(210 80% 55%)',
-    chart4: 'hsl(265 70% 60%)',
-    chart5: 'hsl(340 75% 55%)',
+export const COLORS = {
+  // Background layers
+  bg: {
+    primary: '#080808',
+    secondary: '#111111',
+    tertiary: '#191919',
+    elevated: '#202020',
+    border: '#2a2a2a',
+    borderStrong: '#3a3a3a',
   },
-  dark: {
-    background: 'hsl(220 25% 8%)',
-    foreground: 'hsl(220 10% 95%)',
-    card: 'hsl(220 25% 12%)',
-    cardForeground: 'hsl(220 10% 95%)',
-    popover: 'hsl(220 25% 12%)',
-    popoverForeground: 'hsl(220 10% 95%)',
-    primary: 'hsl(158 60% 45%)',
-    primaryForeground: 'hsl(0 0% 100%)',
-    secondary: 'hsl(220 20% 18%)',
-    secondaryForeground: 'hsl(220 10% 85%)',
-    muted: 'hsl(220 20% 18%)',
-    mutedForeground: 'hsl(220 10% 55%)',
-    accent: 'hsl(158 60% 45%)',
-    accentForeground: 'hsl(0 0% 100%)',
-    destructive: 'hsl(0 70% 55%)',
-    border: 'hsl(220 20% 22%)',
-    input: 'hsl(220 20% 22%)',
-    ring: 'hsl(158 60% 45%)',
-    radius: '0.75rem',
-    chart1: 'hsl(158 60% 45%)',
-    chart2: 'hsl(25 90% 60%)',
-    chart3: 'hsl(210 75% 60%)',
-    chart4: 'hsl(265 65% 65%)',
-    chart5: 'hsl(340 70% 60%)',
-  },
-};
 
-export const NAV_THEME: Record<'light' | 'dark', Theme> = {
-  light: {
-    ...DefaultTheme,
-    colors: {
-      background: THEME.light.background,
-      border: THEME.light.border,
-      card: THEME.light.card,
-      notification: THEME.light.destructive,
-      primary: THEME.light.primary,
-      text: THEME.light.foreground,
-    },
+  // Accent — electric lime-green
+  accent: {
+    DEFAULT: '#c8f65d',
+    dim: 'rgba(200,246,93,0.12)',
+    dimMid: 'rgba(200,246,93,0.2)',
+    glow: 'rgba(200,246,93,0.08)',
+    text: '#c8f65d',
+    dark: '#a3d43a',
   },
-  dark: {
-    ...DarkTheme,
-    colors: {
-      background: THEME.dark.background,
-      border: THEME.dark.border,
-      card: THEME.dark.card,
-      notification: THEME.dark.destructive,
-      primary: THEME.dark.primary,
-      text: THEME.dark.foreground,
-    },
+
+  // Text scale
+  text: {
+    primary: '#f2f2f2',
+    secondary: '#8a8a8a',
+    tertiary: '#555555',
+    inverse: '#0a0a0a',
+    accent: '#c8f65d',
   },
-};
+
+  // Semantic
+  success: '#22c55e',
+  successDim: 'rgba(34,197,94,0.15)',
+  warning: '#f59e0b',
+  warningDim: 'rgba(245,158,11,0.15)',
+  danger: '#ef4444',
+  dangerDim: 'rgba(239,68,68,0.15)',
+  info: '#818cf8',
+  infoDim: 'rgba(129,140,248,0.15)',
+  orange: '#f97316',
+  orangeDim: 'rgba(249,115,22,0.15)',
+
+  // Difficulty
+  beginner: '#22c55e',
+  intermediate: '#f59e0b',
+  advanced: '#ef4444',
+
+  // White alpha
+  white: {
+    5: 'rgba(255,255,255,0.05)',
+    8: 'rgba(255,255,255,0.08)',
+    10: 'rgba(255,255,255,0.10)',
+    15: 'rgba(255,255,255,0.15)',
+    20: 'rgba(255,255,255,0.20)',
+    30: 'rgba(255,255,255,0.30)',
+    50: 'rgba(255,255,255,0.50)',
+    70: 'rgba(255,255,255,0.70)',
+  },
+} as const;
+
+export const RADIUS = {
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  xxl: 28,
+  full: 9999,
+} as const;
+
+export const SPACING = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  xxl: 24,
+  xxxl: 32,
+} as const;
+
+export const FONT = {
+  xs: 11,
+  sm: 12,
+  base: 14,
+  md: 15,
+  lg: 16,
+  xl: 18,
+  xxl: 22,
+  xxxl: 28,
+  display: 36,
+} as const;
