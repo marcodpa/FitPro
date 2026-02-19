@@ -188,7 +188,8 @@ export default function ProfileTab() {
     <>
     <ScrollView
       style={{ flex: 1, backgroundColor: t.bg.primary }}
-      showsVerticalScrollIndicator={false}>
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ paddingBottom: 40 }}>
 
       {/* Hero Header */}
       <View
