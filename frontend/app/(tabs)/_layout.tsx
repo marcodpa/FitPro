@@ -1,24 +1,58 @@
 import { Tabs } from 'expo-router';
 import { useAppStore } from '@/lib/store';
 import { View, Text } from 'react-native';
+import {
+  Home,
+  Dumbbell,
+  Users,
+  MessageSquare,
+  User,
+} from 'lucide-react-native';
+
+const PRIMARY = '#10b981';
+const INACTIVE = '#a1a1aa';
 
 function TabIcon({
-  icon,
+  IconComponent,
   label,
   focused,
 }: {
-  icon: string;
+  IconComponent: React.ComponentType<{ size: number; color: string; strokeWidth: number }>;
   label: string;
   focused: boolean;
 }) {
   return (
-    <View className="items-center justify-center" style={{ gap: 2, paddingTop: 4 }}>
-      <Text style={{ fontSize: 22 }}>{icon}</Text>
+    <View
+      style={{
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingTop: 6,
+        gap: 3,
+        minWidth: 56,
+      }}>
+      {focused && (
+        <View
+          style={{
+            position: 'absolute',
+            top: -1,
+            width: 28,
+            height: 3,
+            borderRadius: 2,
+            backgroundColor: PRIMARY,
+          }}
+        />
+      )}
+      <IconComponent
+        size={22}
+        color={focused ? PRIMARY : INACTIVE}
+        strokeWidth={focused ? 2.2 : 1.8}
+      />
       <Text
         style={{
           fontSize: 10,
           fontWeight: focused ? '700' : '500',
-          color: focused ? '#0d9e6e' : '#94a3b8',
+          color: focused ? PRIMARY : INACTIVE,
+          letterSpacing: 0.2,
         }}>
         {label}
       </Text>
@@ -35,16 +69,18 @@ export default function TabsLayout() {
         <View
           style={{
             backgroundColor: '#f59e0b',
-            paddingTop: 44,
-            paddingBottom: 8,
-            paddingHorizontal: 16,
+            paddingTop: 52,
+            paddingBottom: 10,
+            paddingHorizontal: 20,
             flexDirection: 'row',
             alignItems: 'center',
-            gap: 8,
+            gap: 10,
           }}>
-          <Text style={{ fontSize: 16 }}>📵</Text>
+          <View
+            style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#fff' }}
+          />
           <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>
-            Modo Offline — Datos sincronizados localmente
+            Sin conexion — datos sincronizados localmente
           </Text>
         </View>
       )}
@@ -52,17 +88,17 @@ export default function TabsLayout() {
         screenOptions={{
           headerShown: false,
           tabBarStyle: {
-            height: 72,
-            paddingBottom: 8,
+            height: 76,
+            paddingBottom: 10,
             paddingTop: 0,
             borderTopWidth: 1,
-            borderTopColor: '#e2e8f0',
+            borderTopColor: '#e4e4e7',
             backgroundColor: '#ffffff',
-            elevation: 8,
+            elevation: 12,
             shadowColor: '#000',
-            shadowOffset: { width: 0, height: -2 },
-            shadowOpacity: 0.06,
-            shadowRadius: 8,
+            shadowOffset: { width: 0, height: -4 },
+            shadowOpacity: 0.07,
+            shadowRadius: 16,
           },
           tabBarShowLabel: false,
         }}>
@@ -70,7 +106,7 @@ export default function TabsLayout() {
           name="index"
           options={{
             tabBarIcon: ({ focused }) => (
-              <TabIcon icon="🏠" label="Inicio" focused={focused} />
+              <TabIcon IconComponent={Home} label="Inicio" focused={focused} />
             ),
           }}
         />
@@ -78,7 +114,7 @@ export default function TabsLayout() {
           name="routines"
           options={{
             tabBarIcon: ({ focused }) => (
-              <TabIcon icon="🏋️" label="Rutinas" focused={focused} />
+              <TabIcon IconComponent={Dumbbell} label="Rutinas" focused={focused} />
             ),
           }}
         />
@@ -86,7 +122,7 @@ export default function TabsLayout() {
           name="social"
           options={{
             tabBarIcon: ({ focused }) => (
-              <TabIcon icon="🔥" label="Social" focused={focused} />
+              <TabIcon IconComponent={Users} label="Social" focused={focused} />
             ),
           }}
         />
@@ -94,7 +130,7 @@ export default function TabsLayout() {
           name="chat"
           options={{
             tabBarIcon: ({ focused }) => (
-              <TabIcon icon="💬" label="Chat" focused={focused} />
+              <TabIcon IconComponent={MessageSquare} label="Chat" focused={focused} />
             ),
           }}
         />
@@ -102,7 +138,7 @@ export default function TabsLayout() {
           name="profile"
           options={{
             tabBarIcon: ({ focused }) => (
-              <TabIcon icon="👤" label="Perfil" focused={focused} />
+              <TabIcon IconComponent={User} label="Perfil" focused={focused} />
             ),
           }}
         />
