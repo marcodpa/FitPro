@@ -5,67 +5,111 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
-  TextInput,
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAppStore } from '@/lib/store';
+import { useAppStore, useTheme } from '@/lib/store';
 import { FakeSocialService } from '@/lib/services';
 import type { Post } from '@/lib/types';
+import {
+  Heart,
+  MessageCircle,
+  Share2,
+  MoreHorizontal,
+  Plus,
+  Dumbbell,
+  User,
+} from 'lucide-react-native';
+import { FONT, RADIUS, SPACING } from '@/lib/theme';
 
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return 'Ahora';
   if (mins < 60) return `${mins}m`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h`;
-  return `${Math.floor(hours / 24)}d`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  return `${Math.floor(hrs / 24)}d`;
 }
 
-function PostCard({ post, currentUserId, onLike, onPress }: {
+function PostCard({
+  post,
+  currentUserId,
+  onLike,
+  onPress,
+}: {
   post: Post;
   currentUserId: string;
   onLike: (id: string) => void;
   onPress: (id: string) => void;
 }) {
+  const t = useTheme();
   const liked = post.likes.includes(currentUserId);
+
   return (
     <View
       style={{
-        backgroundColor: '#fff',
-        borderRadius: 20,
+        backgroundColor: t.bg.card,
+        borderRadius: RADIUS.xl,
         overflow: 'hidden',
-        marginBottom: 16,
+        marginBottom: SPACING.lg,
         borderWidth: 1,
-        borderColor: '#f1f5f9',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-        elevation: 3,
+        borderColor: t.border.subtle,
       }}>
-      {/* Author */}
+      {/* Author row */}
       <View
-        className="flex-row items-center gap-3 px-4 pt-4 pb-3">
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 12,
+          paddingHorizontal: SPACING.lg,
+          paddingTop: SPACING.lg,
+          paddingBottom: SPACING.md,
+        }}>
         <Image
           source={{ uri: post.author.avatar }}
-          style={{ width: 42, height: 42, borderRadius: 21 }}
+          style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: t.bg.tertiary }}
         />
-        <View className="flex-1">
-          <Text className="text-foreground font-bold text-sm">{post.author.name}</Text>
-          <Text className="text-muted-foreground text-xs">
-            {post.author.role === 'trainer' ? '🏋️ Entrenador' : '🏃 Atleta'} • {timeAgo(post.createdAt)}
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: t.text.primary, fontWeight: '700', fontSize: FONT.base }}>
+            {post.author.name}
           </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 }}>
+            {post.author.role === 'trainer' ? (
+              <Dumbbell size={11} color={t.accent} />
+            ) : (
+              <User size={11} color={t.text.tertiary} />
+            )}
+            <Text style={{ color: t.text.tertiary, fontSize: FONT.xs }}>
+              {post.author.role === 'trainer' ? 'Entrenador' : 'Atleta'} · {timeAgo(post.createdAt)}
+            </Text>
+          </View>
         </View>
-        <TouchableOpacity>
-          <Text className="text-muted-foreground text-xl">···</Text>
+        <TouchableOpacity
+          style={{
+            width: 34,
+            height: 34,
+            borderRadius: RADIUS.md,
+            backgroundColor: t.bg.tertiary,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+          <MoreHorizontal size={16} color={t.text.secondary} />
         </TouchableOpacity>
       </View>
 
       {/* Text */}
-      <Text className="text-foreground text-sm px-4 pb-3 leading-5">{post.text}</Text>
+      <Text
+        style={{
+          color: t.text.primary,
+          fontSize: FONT.base,
+          lineHeight: 22,
+          paddingHorizontal: SPACING.lg,
+          paddingBottom: post.imageUrl ? SPACING.md : SPACING.lg,
+        }}>
+        {post.text}
+      </Text>
 
       {/* Image */}
       {post.imageUrl && (
@@ -78,36 +122,75 @@ function PostCard({ post, currentUserId, onLike, onPress }: {
         </TouchableOpacity>
       )}
 
-      {/* Actions */}
+      {/* Action bar */}
       <View
-        className="flex-row items-center gap-1 px-4 py-3"
-        style={{ borderTopWidth: 1, borderTopColor: '#f8fafc', marginTop: 4 }}>
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingHorizontal: SPACING.md,
+          paddingVertical: SPACING.md,
+          borderTopWidth: 1,
+          borderTopColor: t.border.subtle,
+          gap: 4,
+        }}>
+        {/* Like */}
         <TouchableOpacity
           onPress={() => onLike(post.id)}
-          className="flex-row items-center gap-1 py-1 px-3">
-          <Text style={{ fontSize: 20 }}>{liked ? '❤️' : '🤍'}</Text>
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 6,
+            paddingHorizontal: SPACING.md,
+            paddingVertical: SPACING.sm,
+            borderRadius: RADIUS.lg,
+            backgroundColor: liked ? t.dangerDim : 'transparent',
+          }}>
+          <Heart
+            size={17}
+            color={liked ? t.danger : t.text.secondary}
+            fill={liked ? t.danger : 'none'}
+          />
           <Text
             style={{
-              color: liked ? '#ef4444' : '#94a3b8',
+              color: liked ? t.danger : t.text.secondary,
+              fontSize: FONT.sm,
               fontWeight: '600',
-              fontSize: 13,
             }}>
             {post.likes.length}
           </Text>
         </TouchableOpacity>
 
+        {/* Comment */}
         <TouchableOpacity
           onPress={() => onPress(post.id)}
-          className="flex-row items-center gap-1 py-1 px-3">
-          <Text style={{ fontSize: 20 }}>💬</Text>
-          <Text className="text-muted-foreground font-semibold text-sm">
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 6,
+            paddingHorizontal: SPACING.md,
+            paddingVertical: SPACING.sm,
+            borderRadius: RADIUS.lg,
+          }}>
+          <MessageCircle size={17} color={t.text.secondary} />
+          <Text style={{ color: t.text.secondary, fontSize: FONT.sm, fontWeight: '600' }}>
             {post.comments.length}
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity className="flex-row items-center gap-1 py-1 px-3">
-          <Text style={{ fontSize: 20 }}>📤</Text>
-          <Text className="text-muted-foreground font-semibold text-sm">Compartir</Text>
+        {/* Share */}
+        <TouchableOpacity
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 6,
+            paddingHorizontal: SPACING.md,
+            paddingVertical: SPACING.sm,
+            borderRadius: RADIUS.lg,
+          }}>
+          <Share2 size={17} color={t.text.secondary} />
+          <Text style={{ color: t.text.secondary, fontSize: FONT.sm, fontWeight: '600' }}>
+            Compartir
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -116,6 +199,7 @@ function PostCard({ post, currentUserId, onLike, onPress }: {
 
 export default function SocialTab() {
   const { user } = useAppStore();
+  const t = useTheme();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -143,45 +227,57 @@ export default function SocialTab() {
   };
 
   return (
-    <View className="flex-1 bg-background">
+    <View style={{ flex: 1, backgroundColor: t.bg.primary }}>
       {/* Header */}
       <View
         style={{
-          backgroundColor: '#7c3aed',
+          backgroundColor: t.bg.secondary,
           paddingTop: 56,
-          paddingBottom: 20,
-          paddingHorizontal: 20,
-          borderBottomLeftRadius: 28,
-          borderBottomRightRadius: 28,
+          paddingBottom: SPACING.xxl,
+          paddingHorizontal: SPACING.xxl,
+          borderBottomWidth: 1,
+          borderBottomColor: t.border.subtle,
+          flexDirection: 'row',
+          alignItems: 'flex-end',
+          justifyContent: 'space-between',
         }}>
-        <View className="flex-row justify-between items-center">
-          <Text className="text-white font-bold" style={{ fontSize: 26 }}>
-            FitPro Social 🔥
+        <View>
+          <Text style={{ color: t.text.secondary, fontSize: FONT.xs, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 }}>
+            FitPro
           </Text>
-          <TouchableOpacity
-            onPress={() => router.push('/social/create')}
-            style={{
-              backgroundColor: 'rgba(255,255,255,0.25)',
-              borderRadius: 12,
-              paddingHorizontal: 14,
-              paddingVertical: 8,
-            }}>
-            <Text className="text-white font-bold text-sm">+ Post</Text>
-          </TouchableOpacity>
+          <Text style={{ color: t.text.primary, fontSize: FONT.xxxl, fontWeight: '800', letterSpacing: -0.5 }}>
+            Comunidad
+          </Text>
         </View>
+        <TouchableOpacity
+          onPress={() => router.push('/social/create')}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 6,
+            backgroundColor: t.accent,
+            borderRadius: RADIUS.lg,
+            paddingHorizontal: SPACING.lg,
+            paddingVertical: SPACING.md,
+          }}>
+          <Plus size={16} color={t.accentText} strokeWidth={2.5} />
+          <Text style={{ color: t.accentText, fontWeight: '700', fontSize: FONT.sm }}>
+            Publicar
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {loading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#7c3aed" />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator size="large" color={t.accent} />
         </View>
       ) : (
         <ScrollView
-          className="flex-1"
-          contentContainerStyle={{ padding: 16 }}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ padding: SPACING.lg, paddingBottom: 32 }}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#7c3aed" />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={t.accent} />
           }>
           {posts.map((post) => (
             <PostCard
@@ -192,7 +288,6 @@ export default function SocialTab() {
               onPress={(id) => router.push(`/social/${id}` as any)}
             />
           ))}
-          <View style={{ height: 16 }} />
         </ScrollView>
       )}
     </View>
