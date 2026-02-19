@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import { useAppStore } from '@/lib/store';
-import { View, Text } from 'react-native';
+import { View, Text, Platform } from 'react-native';
+import { COLORS } from '@/lib/theme';
 import {
   Home,
   Dumbbell,
@@ -9,8 +10,8 @@ import {
   User,
 } from 'lucide-react-native';
 
-const PRIMARY = '#10b981';
-const INACTIVE = '#a1a1aa';
+const AC = COLORS.accent.DEFAULT;
+const INACTIVE = '#484848';
 
 function TabIcon({
   IconComponent,
@@ -22,37 +23,32 @@ function TabIcon({
   focused: boolean;
 }) {
   return (
-    <View
-      style={{
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingTop: 6,
-        gap: 3,
-        minWidth: 56,
-      }}>
-      {focused && (
+    <View style={{ alignItems: 'center', justifyContent: 'center', gap: 4, paddingTop: 6, minWidth: 52 }}>
+      {focused ? (
         <View
           style={{
-            position: 'absolute',
-            top: -1,
-            width: 28,
-            height: 3,
-            borderRadius: 2,
-            backgroundColor: PRIMARY,
-          }}
-        />
+            width: 44,
+            height: 44,
+            borderRadius: 14,
+            backgroundColor: COLORS.accent.dim,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 1,
+            borderColor: COLORS.accent.dimMid,
+          }}>
+          <IconComponent size={21} color={AC} strokeWidth={2.2} />
+        </View>
+      ) : (
+        <View style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+          <IconComponent size={21} color={INACTIVE} strokeWidth={1.7} />
+        </View>
       )}
-      <IconComponent
-        size={22}
-        color={focused ? PRIMARY : INACTIVE}
-        strokeWidth={focused ? 2.2 : 1.8}
-      />
       <Text
         style={{
           fontSize: 10,
           fontWeight: focused ? '700' : '500',
-          color: focused ? PRIMARY : INACTIVE,
-          letterSpacing: 0.2,
+          color: focused ? AC : INACTIVE,
+          letterSpacing: 0.1,
         }}>
         {label}
       </Text>
@@ -68,19 +64,17 @@ export default function TabsLayout() {
       {isOffline && (
         <View
           style={{
-            backgroundColor: '#f59e0b',
+            backgroundColor: COLORS.warning,
             paddingTop: 52,
             paddingBottom: 10,
             paddingHorizontal: 20,
             flexDirection: 'row',
             alignItems: 'center',
-            gap: 10,
+            gap: 8,
           }}>
-          <View
-            style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#fff' }}
-          />
-          <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>
-            Sin conexion — datos sincronizados localmente
+          <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: '#000' }} />
+          <Text style={{ color: '#000', fontWeight: '700', fontSize: 12, letterSpacing: 0.2 }}>
+            SIN CONEXION — modo offline activo
           </Text>
         </View>
       )}
@@ -88,17 +82,14 @@ export default function TabsLayout() {
         screenOptions={{
           headerShown: false,
           tabBarStyle: {
-            height: 76,
-            paddingBottom: 10,
-            paddingTop: 0,
+            height: Platform.OS === 'ios' ? 88 : 72,
+            paddingBottom: Platform.OS === 'ios' ? 24 : 8,
+            paddingTop: 4,
             borderTopWidth: 1,
-            borderTopColor: '#e4e4e7',
-            backgroundColor: '#ffffff',
-            elevation: 12,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: -4 },
-            shadowOpacity: 0.07,
-            shadowRadius: 16,
+            borderTopColor: COLORS.bg.border,
+            backgroundColor: COLORS.bg.secondary,
+            elevation: 0,
+            shadowOpacity: 0,
           },
           tabBarShowLabel: false,
         }}>
