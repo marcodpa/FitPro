@@ -28,8 +28,7 @@ function UserDashboard() {
       {/* Header */}
       <View
         style={{
-          background: 'linear-gradient(135deg, #0d9e6e 0%, #059669 100%)',
-          backgroundColor: '#0d9e6e',
+            backgroundColor: '#0d9e6e',
           paddingTop: 56,
           paddingBottom: 32,
           paddingHorizontal: 24,
