@@ -158,9 +158,9 @@ export function useVoiceCommands({
       setStatus('idle');
     };
 
-    r.onresult = (event) => {
-      const results = Array.from(event.results);
-      const last = results[results.length - 1];
+    r.onresult = (event: SpeechRecognitionEvent) => {
+      const resultList = event.results;
+      const last: SpeechRecognitionResult = resultList[resultList.length - 1];
       const text = last[0].transcript.trim();
       const isFinal = last.isFinal;
 
