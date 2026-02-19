@@ -1,8 +1,14 @@
 /**
  * VoiceCommandOverlay
  * -------------------
- * Floating mic button (bottom-right) + animated transcript bubble.
- * Shown on all screens when voiceEnabled === true in the store.
+ * Floating mic button (bottom-right corner), shown on all screens when voiceEnabled === true.
+ *
+ * States:
+ *   standby    → small dim mic, shows "Di 'Ey Fit Pro'..." label
+ *   listening  → lit-up mic with pulse ring, ready for command
+ *   processing → shows matched command label in bubble
+ *   error      → red alert icon (permission denied)
+ *   unsupported→ hidden (browser can't do it)
  */
 
 import React, { useEffect, useRef } from 'react';
@@ -23,113 +29,137 @@ interface Props {
   transcript: string;
   lastCommand: string | null;
   isSupported: boolean;
-  onToggle: () => void;
+  onActivate: () => void;
 }
+
+const ACCENT       = '#c8f65d';
+const ACCENT_TEXT  = '#0a0a0a';
+const ERROR_COLOR  = '#ef4444';
+const DARK_BG      = 'rgba(12,12,12,0.93)';
+const BTN_SIZE     = 52;
+const BTN_SIZE_STANDBY = 42;
 
 export default function VoiceCommandOverlay({
   status,
   transcript,
   lastCommand,
   isSupported,
-  onToggle,
+  onActivate,
 }: Props) {
-  // Pulse animation for the listening ring
-  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const pulseAnim    = useRef(new Animated.Value(1)).current;
   const pulseOpacity = useRef(new Animated.Value(0)).current;
   const bubbleOpacity = useRef(new Animated.Value(0)).current;
-  const bubbleY = useRef(new Animated.Value(12)).current;
+  const bubbleY       = useRef(new Animated.Value(10)).current;
+  const btnScale      = useRef(new Animated.Value(1)).current;
+
+  const isStandby    = status === 'standby';
+  const isListening  = status === 'listening';
+  const isProcessing = status === 'processing';
+  const isError      = status === 'error' || status === 'unsupported';
 
   // Pulse ring when listening
   useEffect(() => {
-    if (status === 'listening') {
+    if (isListening) {
       Animated.loop(
         Animated.sequence([
           Animated.parallel([
-            Animated.timing(pulseAnim, { toValue: 1.8, duration: 900, useNativeDriver: true }),
-            Animated.timing(pulseOpacity, { toValue: 0.35, duration: 450, useNativeDriver: true }),
+            Animated.timing(pulseAnim,    { toValue: 1.9,  duration: 800, useNativeDriver: true }),
+            Animated.timing(pulseOpacity, { toValue: 0.3,  duration: 400, useNativeDriver: true }),
           ]),
           Animated.parallel([
-            Animated.timing(pulseAnim, { toValue: 1, duration: 900, useNativeDriver: true }),
-            Animated.timing(pulseOpacity, { toValue: 0, duration: 450, useNativeDriver: true }),
+            Animated.timing(pulseAnim,    { toValue: 1,    duration: 800, useNativeDriver: true }),
+            Animated.timing(pulseOpacity, { toValue: 0,    duration: 400, useNativeDriver: true }),
           ]),
         ])
       ).start();
     } else {
-      pulseAnim.setValue(1);
-      pulseOpacity.setValue(0);
+      pulseAnim.stopAnimation();
+      pulseOpacity.stopAnimation();
+      Animated.parallel([
+        Animated.timing(pulseAnim,    { toValue: 1, duration: 200, useNativeDriver: true }),
+        Animated.timing(pulseOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+      ]).start();
     }
-  }, [status, pulseAnim, pulseOpacity]);
+  }, [isListening, pulseAnim, pulseOpacity]);
 
-  // Show / hide transcript bubble
-  const showBubble = transcript.length > 0 || status === 'processing';
+  // Scale button when activated
+  useEffect(() => {
+    if (isListening) {
+      Animated.sequence([
+        Animated.timing(btnScale, { toValue: 1.15, duration: 120, useNativeDriver: true }),
+        Animated.timing(btnScale, { toValue: 1,    duration: 120, useNativeDriver: true }),
+      ]).start();
+    }
+  }, [isListening, btnScale]);
+
+  // Bubble visibility
+  const showBubble = transcript.length > 0 || isProcessing;
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(bubbleOpacity, {
-        toValue: showBubble ? 1 : 0,
-        duration: 180,
-        useNativeDriver: true,
-      }),
-      Animated.timing(bubbleY, {
-        toValue: showBubble ? 0 : 12,
-        duration: 180,
-        useNativeDriver: true,
-      }),
+      Animated.timing(bubbleOpacity, { toValue: showBubble ? 1 : 0, duration: 160, useNativeDriver: true }),
+      Animated.timing(bubbleY,       { toValue: showBubble ? 0 : 10, duration: 160, useNativeDriver: true }),
     ]).start();
   }, [showBubble, bubbleOpacity, bubbleY]);
 
-  const accentColor = '#c8f65d';
-  const accentText  = '#0a0a0a';
-  const errorColor  = '#ef4444';
-  const darkBg      = 'rgba(12,12,12,0.92)';
-
-  const isListening  = status === 'listening';
-  const isError      = status === 'error' || status === 'unsupported';
-  const isProcessing = status === 'processing';
+  if (!isSupported || status === 'idle') return null;
 
   const btnColor = isError
-    ? errorColor
+    ? ERROR_COLOR
     : isListening || isProcessing
-    ? accentColor
-    : 'rgba(28,28,28,0.95)';
+    ? ACCENT
+    : 'rgba(18,18,18,0.88)';
 
-  const iconColor = isListening || isProcessing ? accentText : isError ? '#fff' : accentColor;
+  const iconColor = isListening || isProcessing
+    ? ACCENT_TEXT
+    : isError
+    ? '#fff'
+    : 'rgba(200,246,93,0.55)';
 
-  const bubbleText =
-    status === 'processing' && lastCommand
-      ? lastCommand
-      : transcript;
+  const currentBtnSize = isStandby ? BTN_SIZE_STANDBY : BTN_SIZE;
+
+  const bubbleText = isProcessing && lastCommand ? lastCommand : transcript;
 
   return (
     <View style={styles.container} pointerEvents="box-none">
+
       {/* Transcript / command bubble */}
-      <Animated.View
-        style={[
-          styles.bubble,
-          {
-            opacity: bubbleOpacity,
-            transform: [{ translateY: bubbleY }],
-            backgroundColor: darkBg,
-            borderColor: isProcessing ? accentColor : 'rgba(255,255,255,0.08)',
-          },
-        ]}
-        pointerEvents="none">
-        <View style={[styles.bubbleDot, { backgroundColor: isProcessing ? accentColor : '#6b7280' }]} />
-        <Text
+      {showBubble && (
+        <Animated.View
           style={[
-            styles.bubbleText,
-            { color: isProcessing ? accentColor : '#e5e7eb' },
+            styles.bubble,
+            {
+              opacity: bubbleOpacity,
+              transform: [{ translateY: bubbleY }],
+              backgroundColor: DARK_BG,
+              borderColor: isProcessing ? ACCENT : 'rgba(255,255,255,0.08)',
+            },
           ]}
-          numberOfLines={2}>
-          {bubbleText || '...'}
-        </Text>
-      </Animated.View>
+          pointerEvents="none">
+          <View style={[styles.bubbleDot, { backgroundColor: isProcessing ? ACCENT : '#6b7280' }]} />
+          <Text
+            style={[styles.bubbleText, { color: isProcessing ? ACCENT : '#e5e7eb' }]}
+            numberOfLines={2}>
+            {bubbleText || '...'}
+          </Text>
+        </Animated.View>
+      )}
+
+      {/* Standby hint label */}
+      {isStandby && !showBubble && (
+        <View style={styles.wakeHint} pointerEvents="none">
+          <Text style={styles.wakeHintText}>Di "Ey Fit Pro"</Text>
+        </View>
+      )}
 
       {/* Pulse ring */}
       <Animated.View
         style={[
           styles.pulseRing,
           {
-            backgroundColor: accentColor,
+            width: currentBtnSize,
+            height: currentBtnSize,
+            borderRadius: currentBtnSize / 2,
+            backgroundColor: ACCENT,
             opacity: pulseOpacity,
             transform: [{ scale: pulseAnim }],
           },
@@ -138,41 +168,38 @@ export default function VoiceCommandOverlay({
       />
 
       {/* Mic button */}
-      <TouchableOpacity
-        onPress={onToggle}
-        activeOpacity={0.82}
-        style={[
-          styles.micBtn,
-          {
-            backgroundColor: btnColor,
-            shadowColor: isListening ? accentColor : '#000',
-          },
-        ]}>
-        {isError ? (
-          <AlertCircle size={22} color={iconColor} strokeWidth={2} />
-        ) : isListening || isProcessing ? (
-          <Mic size={22} color={iconColor} strokeWidth={2.5} />
-        ) : (
-          <MicOff size={22} color={iconColor} strokeWidth={2} />
-        )}
-      </TouchableOpacity>
+      <Animated.View style={{ transform: [{ scale: btnScale }] }}>
+        <TouchableOpacity
+          onPress={onActivate}
+          activeOpacity={0.8}
+          style={[
+            styles.micBtn,
+            {
+              width: currentBtnSize,
+              height: currentBtnSize,
+              borderRadius: currentBtnSize / 2,
+              backgroundColor: btnColor,
+              shadowColor: isListening ? ACCENT : '#000',
+              borderWidth: isStandby ? 1 : 0,
+              borderColor: isStandby ? 'rgba(200,246,93,0.2)' : 'transparent',
+            },
+          ]}>
+          {isError ? (
+            <AlertCircle size={isStandby ? 17 : 21} color={iconColor} strokeWidth={2} />
+          ) : (
+            <Mic size={isStandby ? 17 : 21} color={iconColor} strokeWidth={isListening ? 2.5 : 2} />
+          )}
+        </TouchableOpacity>
+      </Animated.View>
 
-      {/* Unsupported label */}
-      {!isSupported && (
-        <Text style={styles.unsupportedLabel}>
-          No disponible en este navegador
-        </Text>
-      )}
     </View>
   );
 }
 
-const BTN_SIZE = 56;
-
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    bottom: Platform.OS === 'web' ? 90 : 100,
+    bottom: Platform.OS === 'web' ? 88 : 100,
     right: SPACING.xl,
     alignItems: 'flex-end',
     zIndex: 9999,
@@ -180,21 +207,22 @@ const styles = StyleSheet.create({
   bubble: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 7,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
+    paddingHorizontal: 13,
+    paddingVertical: 8,
     marginBottom: SPACING.md,
-    maxWidth: 240,
+    maxWidth: 230,
     ...Platform.select({
-      web: { backdropFilter: 'blur(12px)' } as any,
+      web: { backdropFilter: 'blur(14px)' } as any,
     }),
   },
   bubbleDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    flexShrink: 0,
   },
   bubbleText: {
     fontSize: FONT.sm,
@@ -204,34 +232,41 @@ const styles = StyleSheet.create({
   },
   pulseRing: {
     position: 'absolute',
-    width: BTN_SIZE,
-    height: BTN_SIZE,
-    borderRadius: BTN_SIZE / 2,
     bottom: 0,
     right: 0,
   },
   micBtn: {
-    width: BTN_SIZE,
-    height: BTN_SIZE,
-    borderRadius: BTN_SIZE / 2,
     alignItems: 'center',
     justifyContent: 'center',
     ...Platform.select({
       ios: {
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.4,
-        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.45,
+        shadowRadius: 10,
       },
       android: { elevation: 10 },
       web: {
-        boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+        boxShadow: '0 4px 18px rgba(0,0,0,0.55)',
+        cursor: 'pointer',
       } as any,
     }),
   },
-  unsupportedLabel: {
-    color: '#9ca3af',
+  wakeHint: {
+    backgroundColor: 'rgba(12,12,12,0.82)',
+    borderRadius: RADIUS.lg,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    marginBottom: 7,
+    borderWidth: 1,
+    borderColor: 'rgba(200,246,93,0.15)',
+    ...Platform.select({
+      web: { backdropFilter: 'blur(8px)' } as any,
+    }),
+  },
+  wakeHintText: {
+    color: 'rgba(200,246,93,0.55)',
     fontSize: 10,
-    marginTop: 4,
-    textAlign: 'center',
+    fontWeight: '600',
+    letterSpacing: 0.4,
   },
 });
