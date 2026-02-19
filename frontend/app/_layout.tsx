@@ -56,7 +56,7 @@ function RootLayoutInner() {
         },
       }
     : {
-        ...LightTheme,
+        ...DefaultTheme,
         colors: {
           ...LightTheme.colors,
           background:   theme.bg.primary,
