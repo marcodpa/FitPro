@@ -7,10 +7,12 @@ import {
   Image,
   ActivityIndicator,
   Dimensions,
+  StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppStore } from '@/lib/store';
 import { FakeWorkoutService, FakeUserService, FakePaymentService } from '@/lib/services';
+import { COLORS } from '@/lib/theme';
 import type { WorkoutSession, User, Payment } from '@/lib/types';
 import {
   Timer,
@@ -19,10 +21,7 @@ import {
   BookOpen,
   ChevronRight,
   Zap,
-  TrendingUp,
-  CheckCircle2,
   Flame,
-  Weight,
   Play,
   Users,
   CreditCard,
@@ -30,12 +29,16 @@ import {
   BarChart3,
   UserCheck,
   AlertCircle,
+  CheckCircle2,
+  TrendingUp,
+  Bell,
+  ArrowUpRight,
 } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
-const EM = '#10b981';
-const EM_DIM = '#d1fae5';
+const AC = COLORS.accent.DEFAULT;
 
+// ─── Shared UI ────────────────────────────────────────────────────────────────
 function SectionHeader({
   title,
   action,
@@ -53,54 +56,80 @@ function SectionHeader({
         alignItems: 'center',
         marginBottom: 14,
       }}>
-      <Text style={{ fontSize: 18, fontWeight: '700', color: '#0f0f0f', letterSpacing: -0.3 }}>
+      <Text
+        style={{
+          fontSize: 17,
+          fontWeight: '800',
+          color: COLORS.text.primary,
+          letterSpacing: -0.4,
+        }}>
         {title}
       </Text>
       {action && (
         <TouchableOpacity
           onPress={onAction}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: EM }}>{action}</Text>
-          <ChevronRight size={14} color={EM} strokeWidth={2.5} />
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: AC }}>{action}</Text>
+          <ChevronRight size={13} color={AC} strokeWidth={2.5} />
         </TouchableOpacity>
       )}
     </View>
   );
 }
 
-function StatPill({
+function MetricCard({
   icon: Icon,
   value,
   label,
+  iconColor,
 }: {
   icon: React.ComponentType<{ size: number; color: string; strokeWidth: number }>;
   value: string;
   label: string;
+  iconColor?: string;
 }) {
+  const ic = iconColor ?? AC;
   return (
     <View
       style={{
         flex: 1,
-        backgroundColor: 'rgba(255,255,255,0.12)',
+        backgroundColor: COLORS.bg.secondary,
         borderRadius: 16,
         padding: 14,
-        alignItems: 'center',
-        gap: 4,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.08)',
+        borderColor: COLORS.bg.border,
+        gap: 8,
       }}>
-      <Icon size={18} color="#fff" strokeWidth={2} />
-      <Text style={{ color: '#fff', fontWeight: '800', fontSize: 17, letterSpacing: -0.5 }}>
-        {value}
-      </Text>
-      <Text style={{ color: 'rgba(255,255,255,0.55)', fontSize: 10, fontWeight: '500' }}>
-        {label}
-      </Text>
+      <View
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 10,
+          backgroundColor: ic + '18',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+        <Icon size={17} color={ic} strokeWidth={2} />
+      </View>
+      <View style={{ gap: 2 }}>
+        <Text
+          style={{
+            color: COLORS.text.primary,
+            fontWeight: '800',
+            fontSize: 20,
+            letterSpacing: -0.8,
+          }}>
+          {value}
+        </Text>
+        <Text style={{ color: COLORS.text.secondary, fontSize: 11, fontWeight: '500' }}>
+          {label}
+        </Text>
+      </View>
     </View>
   );
 }
 
-// ─── USER / CLIENT DASHBOARD ──────────────────────────────────────────────────
+// ─── USER / CLIENT ─────────────────────────────────────────────────────────────
 function UserDashboard() {
   const { user } = useAppStore();
   const [todayWorkout, setTodayWorkout] = useState<WorkoutSession | null>(null);
@@ -115,149 +144,400 @@ function UserDashboard() {
   }, [user]);
 
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Buenos dias' : hour < 18 ? 'Buenas tardes' : 'Buenas noches';
+  const greeting =
+    hour < 12 ? 'Buenos días' : hour < 18 ? 'Buenas tardes' : 'Buenas noches';
 
   const quickActions = [
-    { icon: Timer, label: 'Cronometro', route: '/workout/timer', bg: '#0f172a', fg: EM },
-    { icon: CalendarDays, label: 'Calendario', route: '/calendar', bg: '#1e1b4b', fg: '#818cf8' },
-    { icon: MessageCircle, label: 'Entrenador', route: '/chat', bg: '#1a0533', fg: '#c084fc' },
-    { icon: BookOpen, label: 'Ejercicios', route: '/exercises', bg: '#431407', fg: '#fb923c' },
+    {
+      icon: Timer,
+      label: 'Cronómetro',
+      sublabel: 'Temporizador',
+      route: '/workout/timer',
+      iconColor: AC,
+      bg: COLORS.accent.dim,
+      border: COLORS.accent.dimMid,
+    },
+    {
+      icon: CalendarDays,
+      label: 'Calendario',
+      sublabel: 'Ver semana',
+      route: '/calendar',
+      iconColor: COLORS.info,
+      bg: COLORS.infoDim,
+      border: COLORS.info + '30',
+    },
+    {
+      icon: MessageCircle,
+      label: 'Entrenador',
+      sublabel: 'Chat directo',
+      route: '/chat',
+      iconColor: COLORS.orange,
+      bg: COLORS.orangeDim,
+      border: COLORS.orange + '30',
+    },
+    {
+      icon: BookOpen,
+      label: 'Ejercicios',
+      sublabel: 'Biblioteca',
+      route: '/exercises',
+      iconColor: COLORS.success,
+      bg: COLORS.successDim,
+      border: COLORS.success + '30',
+    },
   ];
 
-  const recentActivity = [
-    { icon: CheckCircle2, text: 'Completaste Piernas y Gluteos', time: 'Hace 2 dias', iconColor: EM },
-    { icon: Flame, text: 'Racha de 5 dias consecutivos', time: 'Ayer', iconColor: '#f97316' },
-    { icon: TrendingUp, text: 'Nuevo record: 100kg en sentadilla', time: 'Hace 3 dias', iconColor: '#6366f1' },
+  const activity = [
+    {
+      icon: CheckCircle2,
+      text: 'Completaste Piernas & Glúteos',
+      time: 'Hace 2 días',
+      color: COLORS.success,
+    },
+    {
+      icon: Flame,
+      text: 'Racha activa: 5 días consecutivos',
+      time: 'Ayer',
+      color: COLORS.orange,
+    },
+    {
+      icon: TrendingUp,
+      text: 'Nuevo récord: 100 kg en sentadilla',
+      time: 'Hace 3 días',
+      color: COLORS.info,
+    },
   ];
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#f5f5f5' }} showsVerticalScrollIndicator={false}>
-      {/* Hero Header */}
-      <View style={{ backgroundColor: '#0a0a0a', paddingTop: 58, paddingBottom: 28, paddingHorizontal: 24 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <View style={{ gap: 2 }}>
-            <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, fontWeight: '500' }}>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: COLORS.bg.primary }}
+      showsVerticalScrollIndicator={false}>
+      <StatusBar barStyle="light-content" />
+
+      {/* ── Header ─────────────────────────── */}
+      <View
+        style={{
+          paddingTop: 60,
+          paddingBottom: 28,
+          paddingHorizontal: 24,
+          borderBottomWidth: 1,
+          borderBottomColor: COLORS.bg.border,
+        }}>
+        {/* Top row */}
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 28,
+          }}>
+          <View style={{ gap: 3 }}>
+            <Text style={{ color: COLORS.text.secondary, fontSize: 13, fontWeight: '500' }}>
               {greeting}
             </Text>
-            <Text style={{ color: '#fff', fontSize: 26, fontWeight: '800', letterSpacing: -0.8, marginTop: 1 }}>
+            <Text
+              style={{
+                color: COLORS.text.primary,
+                fontSize: 28,
+                fontWeight: '800',
+                letterSpacing: -1,
+              }}>
               {user?.name?.split(' ')[0]}
             </Text>
           </View>
-          <TouchableOpacity onPress={() => router.push('/profile')} activeOpacity={0.85}>
-            <View style={{ position: 'relative' }}>
-              <Image
-                source={{ uri: user?.avatar }}
-                style={{ width: 46, height: 46, borderRadius: 23, borderWidth: 2, borderColor: EM }}
-              />
-              <View
-                style={{
-                  position: 'absolute', bottom: 0, right: 0,
-                  width: 12, height: 12, borderRadius: 6,
-                  backgroundColor: EM, borderWidth: 2, borderColor: '#0a0a0a',
-                }}
-              />
-            </View>
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+            <TouchableOpacity
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 12,
+                backgroundColor: COLORS.bg.secondary,
+                borderWidth: 1,
+                borderColor: COLORS.bg.border,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+              <Bell size={18} color={COLORS.text.secondary} strokeWidth={1.8} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => router.push('/profile')}
+              activeOpacity={0.85}>
+              <View>
+                <Image
+                  source={{ uri: user?.avatar }}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    borderWidth: 1.5,
+                    borderColor: AC,
+                  }}
+                />
+                <View
+                  style={{
+                    position: 'absolute',
+                    bottom: -2,
+                    right: -2,
+                    width: 11,
+                    height: 11,
+                    borderRadius: 6,
+                    backgroundColor: COLORS.success,
+                    borderWidth: 1.5,
+                    borderColor: COLORS.bg.primary,
+                  }}
+                />
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
-        <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.08)', marginVertical: 20 }} />
+
+        {/* Metrics */}
         <View style={{ flexDirection: 'row', gap: 10 }}>
-          <StatPill icon={Zap} value="14" label="Sesiones" />
-          <StatPill icon={Flame} value="5d" label="Racha" />
-          <StatPill icon={Weight} value={`${user?.weight}kg`} label="Peso" />
+          <MetricCard icon={Zap} value="14" label="Sesiones" iconColor={AC} />
+          <MetricCard icon={Flame} value="5 días" label="Racha actual" iconColor={COLORS.orange} />
+          <MetricCard
+            icon={TrendingUp}
+            value={`${user?.weight}kg`}
+            label="Peso actual"
+            iconColor={COLORS.info}
+          />
         </View>
       </View>
 
-      <View style={{ paddingHorizontal: 20, paddingTop: 24, gap: 28 }}>
-        {/* Today Workout */}
+      <View style={{ paddingHorizontal: 20, paddingTop: 28, gap: 28 }}>
+        {/* ── Today Workout ───────────────── */}
         <View>
           <SectionHeader title="Entrenamiento de Hoy" />
           {loading ? (
-            <View style={{ height: 160, backgroundColor: '#fff', borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}>
-              <ActivityIndicator color={EM} size="large" />
+            <View
+              style={{
+                height: 200,
+                backgroundColor: COLORS.bg.secondary,
+                borderRadius: 20,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderWidth: 1,
+                borderColor: COLORS.bg.border,
+              }}>
+              <ActivityIndicator color={AC} size="large" />
             </View>
           ) : todayWorkout ? (
             <TouchableOpacity
               onPress={() => router.push(`/workout/${todayWorkout.id}` as any)}
               activeOpacity={0.88}
-              style={{ borderRadius: 20, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.18, shadowRadius: 16, elevation: 8 }}>
-              <Image source={{ uri: todayWorkout.routine.imageUrl }} style={{ width: '100%', height: 190 }} resizeMode="cover" />
-              <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.42)' }} />
-              <View style={{ position: 'absolute', top: 14, left: 14, backgroundColor: EM, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
-                <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700', letterSpacing: 0.8 }}>HOY</Text>
+              style={{ borderRadius: 20, overflow: 'hidden' }}>
+              <Image
+                source={{ uri: todayWorkout.routine.imageUrl }}
+                style={{ width: '100%', height: 210 }}
+                resizeMode="cover"
+              />
+              {/* overlay */}
+              <View
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  backgroundColor: 'rgba(0,0,0,0.55)',
+                }}
+              />
+              {/* Badges */}
+              <View
+                style={{
+                  position: 'absolute',
+                  top: 14,
+                  left: 14,
+                  flexDirection: 'row',
+                  gap: 8,
+                }}>
+                <View
+                  style={{
+                    backgroundColor: AC,
+                    borderRadius: 8,
+                    paddingHorizontal: 10,
+                    paddingVertical: 5,
+                  }}>
+                  <Text
+                    style={{
+                      color: COLORS.text.inverse,
+                      fontSize: 10,
+                      fontWeight: '800',
+                      letterSpacing: 1,
+                    }}>
+                    HOY
+                  </Text>
+                </View>
+                <View
+                  style={{
+                    backgroundColor: COLORS.white[10],
+                    borderRadius: 8,
+                    paddingHorizontal: 10,
+                    paddingVertical: 5,
+                    borderWidth: 1,
+                    borderColor: COLORS.white[15],
+                  }}>
+                  <Text
+                    style={{
+                      color: '#fff',
+                      fontSize: 10,
+                      fontWeight: '700',
+                      letterSpacing: 0.5,
+                    }}>
+                    {todayWorkout.routine.category.toUpperCase()}
+                  </Text>
+                </View>
               </View>
-              <View style={{ position: 'absolute', top: 14, right: 14, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' }}>
-                <Play size={16} color="#fff" strokeWidth={2.5} />
+              {/* Play btn */}
+              <View
+                style={{
+                  position: 'absolute',
+                  top: 14,
+                  right: 14,
+                  width: 44,
+                  height: 44,
+                  borderRadius: 14,
+                  backgroundColor: AC,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                <Play size={18} color={COLORS.text.inverse} strokeWidth={2.5} />
               </View>
-              <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 16 }}>
-                <Text style={{ color: '#fff', fontWeight: '800', fontSize: 18, letterSpacing: -0.4 }}>
+              {/* Bottom info */}
+              <View
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  padding: 18,
+                  gap: 6,
+                }}>
+                <Text
+                  style={{
+                    color: '#fff',
+                    fontWeight: '800',
+                    fontSize: 20,
+                    letterSpacing: -0.6,
+                  }}>
                   {todayWorkout.routine.name}
                 </Text>
-                <View style={{ flexDirection: 'row', gap: 14, marginTop: 6 }}>
-                  <Text style={{ color: 'rgba(255,255,255,0.72)', fontSize: 12, fontWeight: '500' }}>
+                <View style={{ flexDirection: 'row', gap: 16 }}>
+                  <Text
+                    style={{ color: COLORS.white[70], fontSize: 13, fontWeight: '500' }}>
                     {todayWorkout.routine.duration} min
                   </Text>
-                  <Text style={{ color: 'rgba(255,255,255,0.72)', fontSize: 12, fontWeight: '500' }}>
+                  <Text
+                    style={{ color: COLORS.white[70], fontSize: 13, fontWeight: '500' }}>
                     {todayWorkout.routine.exercises.length} ejercicios
                   </Text>
                 </View>
               </View>
             </TouchableOpacity>
           ) : (
-            <View style={{ backgroundColor: '#fff', borderRadius: 20, padding: 28, alignItems: 'center', borderWidth: 1.5, borderStyle: 'dashed', borderColor: '#e4e4e7' }}>
-              <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: '#f4f4f5', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-                <CalendarDays size={24} color="#a1a1aa" strokeWidth={1.8} />
+            <View
+              style={{
+                backgroundColor: COLORS.bg.secondary,
+                borderRadius: 20,
+                padding: 32,
+                alignItems: 'center',
+                borderWidth: 1,
+                borderStyle: 'dashed',
+                borderColor: COLORS.bg.borderStrong,
+              }}>
+              <View
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 16,
+                  backgroundColor: COLORS.bg.tertiary,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 14,
+                }}>
+                <CalendarDays size={24} color={COLORS.text.tertiary} strokeWidth={1.5} />
               </View>
-              <Text style={{ color: '#0f0f0f', fontWeight: '700', fontSize: 16, letterSpacing: -0.3 }}>
-                Dia de descanso
+              <Text
+                style={{
+                  color: COLORS.text.primary,
+                  fontWeight: '700',
+                  fontSize: 16,
+                  letterSpacing: -0.3,
+                }}>
+                Día de descanso
               </Text>
-              <Text style={{ color: '#71717a', fontSize: 13, textAlign: 'center', marginTop: 4, lineHeight: 18 }}>
+              <Text
+                style={{
+                  color: COLORS.text.secondary,
+                  fontSize: 13,
+                  textAlign: 'center',
+                  marginTop: 6,
+                  lineHeight: 19,
+                }}>
                 No tienes entrenamiento programado para hoy.
               </Text>
             </View>
           )}
         </View>
 
-        {/* Quick Actions */}
+        {/* ── Quick Actions ───────────────── */}
         <View>
-          <SectionHeader title="Accesos Rapidos" />
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-            {quickActions.map((action) => (
+          <SectionHeader title="Accesos Rápidos" />
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+            {quickActions.map((a) => (
               <TouchableOpacity
-                key={action.label}
-                onPress={() => router.push(action.route as any)}
-                activeOpacity={0.82}
+                key={a.label}
+                onPress={() => router.push(a.route as any)}
+                activeOpacity={0.8}
                 style={{
-                  width: (width - 52) / 2,
-                  backgroundColor: '#fff',
+                  width: (width - 50) / 2,
+                  backgroundColor: COLORS.bg.secondary,
                   borderRadius: 18,
-                  padding: 18,
-                  flexDirection: 'row',
-                  alignItems: 'center',
+                  padding: 16,
                   gap: 12,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.06,
-                  shadowRadius: 8,
-                  elevation: 3,
                   borderWidth: 1,
-                  borderColor: '#f0f0f0',
+                  borderColor: COLORS.bg.border,
                 }}>
-                <View style={{ width: 42, height: 42, borderRadius: 13, backgroundColor: action.bg, alignItems: 'center', justifyContent: 'center' }}>
-                  <action.icon size={20} color={action.fg} strokeWidth={2} />
+                <View
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    backgroundColor: a.bg,
+                    borderWidth: 1,
+                    borderColor: a.border,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                  <a.icon size={18} color={a.iconColor} strokeWidth={2} />
                 </View>
-                <Text style={{ color: '#0f0f0f', fontWeight: '600', fontSize: 13, flex: 1, letterSpacing: -0.1 }}>
-                  {action.label}
-                </Text>
+                <View style={{ gap: 2 }}>
+                  <Text
+                    style={{
+                      color: COLORS.text.primary,
+                      fontWeight: '700',
+                      fontSize: 14,
+                      letterSpacing: -0.2,
+                    }}>
+                    {a.label}
+                  </Text>
+                  <Text style={{ color: COLORS.text.tertiary, fontSize: 11, fontWeight: '500' }}>
+                    {a.sublabel}
+                  </Text>
+                </View>
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
-        {/* Recent Activity */}
+        {/* ── Recent Activity ─────────────── */}
         <View style={{ paddingBottom: 32 }}>
           <SectionHeader title="Actividad Reciente" />
-          <View style={{ backgroundColor: '#fff', borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: '#f0f0f0' }}>
-            {recentActivity.map((item, i) => (
+          <View
+            style={{
+              backgroundColor: COLORS.bg.secondary,
+              borderRadius: 20,
+              overflow: 'hidden',
+              borderWidth: 1,
+              borderColor: COLORS.bg.border,
+            }}>
+            {activity.map((item, i) => (
               <View
                 key={i}
                 style={{
@@ -266,17 +546,31 @@ function UserDashboard() {
                   gap: 14,
                   paddingHorizontal: 18,
                   paddingVertical: 16,
-                  borderBottomWidth: i < recentActivity.length - 1 ? 1 : 0,
-                  borderBottomColor: '#f4f4f5',
+                  borderBottomWidth: i < activity.length - 1 ? 1 : 0,
+                  borderBottomColor: COLORS.bg.border,
                 }}>
-                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: item.iconColor + '18', alignItems: 'center', justifyContent: 'center' }}>
-                  <item.icon size={18} color={item.iconColor} strokeWidth={2} />
+                <View
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 11,
+                    backgroundColor: item.color + '18',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                  <item.icon size={17} color={item.color} strokeWidth={2} />
                 </View>
                 <View style={{ flex: 1, gap: 2 }}>
-                  <Text style={{ color: '#0f0f0f', fontSize: 13, fontWeight: '600', letterSpacing: -0.1 }}>
+                  <Text
+                    style={{
+                      color: COLORS.text.primary,
+                      fontSize: 13,
+                      fontWeight: '600',
+                      letterSpacing: -0.1,
+                    }}>
                     {item.text}
                   </Text>
-                  <Text style={{ color: '#a1a1aa', fontSize: 11, fontWeight: '500' }}>
+                  <Text style={{ color: COLORS.text.tertiary, fontSize: 11, fontWeight: '500' }}>
                     {item.time}
                   </Text>
                 </View>
@@ -289,7 +583,7 @@ function UserDashboard() {
   );
 }
 
-// ─── TRAINER DASHBOARD ────────────────────────────────────────────────────────
+// ─── TRAINER ───────────────────────────────────────────────────────────────────
 function TrainerDashboard() {
   const { user } = useAppStore();
   const [clients, setClients] = useState<User[]>([]);
@@ -301,80 +595,234 @@ function TrainerDashboard() {
   }, [user]);
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#f5f5f5' }} showsVerticalScrollIndicator={false}>
-      <View style={{ backgroundColor: '#0a0a0a', paddingTop: 58, paddingBottom: 28, paddingHorizontal: 24 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <View style={{ gap: 2 }}>
-            <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, fontWeight: '500' }}>Panel Entrenador</Text>
-            <Text style={{ color: '#fff', fontSize: 26, fontWeight: '800', letterSpacing: -0.8, marginTop: 1 }}>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: COLORS.bg.primary }}
+      showsVerticalScrollIndicator={false}>
+      <StatusBar barStyle="light-content" />
+
+      <View
+        style={{
+          paddingTop: 60,
+          paddingBottom: 28,
+          paddingHorizontal: 24,
+          borderBottomWidth: 1,
+          borderBottomColor: COLORS.bg.border,
+        }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 28,
+          }}>
+          <View style={{ gap: 3 }}>
+            <Text style={{ color: COLORS.text.secondary, fontSize: 13 }}>
+              Panel Entrenador
+            </Text>
+            <Text
+              style={{
+                color: COLORS.text.primary,
+                fontSize: 28,
+                fontWeight: '800',
+                letterSpacing: -1,
+              }}>
               {user?.name?.split(' ')[0]}
             </Text>
           </View>
-          <Image source={{ uri: user?.avatar }} style={{ width: 46, height: 46, borderRadius: 23, borderWidth: 2, borderColor: '#818cf8' }} />
+          <Image
+            source={{ uri: user?.avatar }}
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 12,
+              borderWidth: 1.5,
+              borderColor: COLORS.info,
+            }}
+          />
         </View>
-        <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.08)', marginVertical: 20 }} />
+
         <View style={{ flexDirection: 'row', gap: 10 }}>
-          <StatPill icon={UserCheck} value={clients.length.toString()} label="Clientes" />
-          <StatPill icon={Users} value="2" label="Cupos" />
-          <StatPill icon={ClipboardList} value="4" label="Rutinas" />
+          <MetricCard
+            icon={UserCheck}
+            value={clients.length.toString()}
+            label="Clientes activos"
+            iconColor={AC}
+          />
+          <MetricCard icon={Users} value="2" label="Cupos libres" iconColor={COLORS.info} />
+          <MetricCard
+            icon={ClipboardList}
+            value="4"
+            label="Rutinas creadas"
+            iconColor={COLORS.orange}
+          />
         </View>
       </View>
 
-      <View style={{ paddingHorizontal: 20, paddingTop: 24, gap: 24 }}>
+      <View style={{ paddingHorizontal: 20, paddingTop: 28, gap: 24 }}>
+        {/* Clients */}
         <View>
-          <SectionHeader title="Mis Clientes" action="Ver chats" onAction={() => router.push('/chat')} />
-          <View style={{ backgroundColor: '#fff', borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: '#f0f0f0' }}>
+          <SectionHeader
+            title="Mis Clientes"
+            action="Ver chats"
+            onAction={() => router.push('/chat')}
+          />
+          <View
+            style={{
+              backgroundColor: COLORS.bg.secondary,
+              borderRadius: 20,
+              overflow: 'hidden',
+              borderWidth: 1,
+              borderColor: COLORS.bg.border,
+            }}>
             {clients.map((client, i) => (
               <View
                 key={client.id}
                 style={{
-                  flexDirection: 'row', alignItems: 'center', gap: 14,
-                  paddingHorizontal: 18, paddingVertical: 14,
-                  borderBottomWidth: i < clients.length - 1 ? 1 : 0, borderBottomColor: '#f4f4f5',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 14,
+                  paddingHorizontal: 18,
+                  paddingVertical: 14,
+                  borderBottomWidth: i < clients.length - 1 ? 1 : 0,
+                  borderBottomColor: COLORS.bg.border,
                 }}>
-                <Image source={{ uri: client.avatar }} style={{ width: 46, height: 46, borderRadius: 23 }} />
+                <Image
+                  source={{ uri: client.avatar }}
+                  style={{ width: 44, height: 44, borderRadius: 12 }}
+                />
                 <View style={{ flex: 1, gap: 2 }}>
-                  <Text style={{ color: '#0f0f0f', fontWeight: '700', fontSize: 14, letterSpacing: -0.2 }}>{client.name}</Text>
-                  <Text style={{ color: '#a1a1aa', fontSize: 12 }}>{client.goal}</Text>
+                  <Text
+                    style={{
+                      color: COLORS.text.primary,
+                      fontWeight: '700',
+                      fontSize: 14,
+                    }}>
+                    {client.name}
+                  </Text>
+                  <Text style={{ color: COLORS.text.secondary, fontSize: 12 }}>
+                    {client.goal}
+                  </Text>
                 </View>
-                <View style={{ backgroundColor: EM_DIM, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
-                  <Text style={{ color: '#065f46', fontSize: 11, fontWeight: '700' }}>Activo</Text>
+                <View
+                  style={{
+                    backgroundColor: COLORS.successDim,
+                    borderRadius: 8,
+                    paddingHorizontal: 10,
+                    paddingVertical: 4,
+                    borderWidth: 1,
+                    borderColor: COLORS.success + '30',
+                  }}>
+                  <Text
+                    style={{
+                      color: COLORS.success,
+                      fontSize: 11,
+                      fontWeight: '700',
+                    }}>
+                    Activo
+                  </Text>
                 </View>
               </View>
             ))}
           </View>
         </View>
 
+        {/* Payment alert */}
         <View>
-          <SectionHeader title="Proximo Cobro" />
-          <View style={{ backgroundColor: '#fff', borderRadius: 20, padding: 18, flexDirection: 'row', alignItems: 'center', gap: 14, borderWidth: 1, borderColor: '#fde68a' }}>
-            <View style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: '#fef3c7', alignItems: 'center', justifyContent: 'center' }}>
-              <CreditCard size={22} color="#d97706" strokeWidth={2} />
+          <SectionHeader title="Próximo Cobro" />
+          <View
+            style={{
+              backgroundColor: COLORS.bg.secondary,
+              borderRadius: 18,
+              padding: 16,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 14,
+              borderWidth: 1,
+              borderColor: COLORS.warning + '40',
+            }}>
+            <View
+              style={{
+                width: 46,
+                height: 46,
+                borderRadius: 13,
+                backgroundColor: COLORS.warningDim,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+              <CreditCard size={20} color={COLORS.warning} strokeWidth={2} />
             </View>
             <View style={{ flex: 1, gap: 2 }}>
-              <Text style={{ color: '#0f0f0f', fontWeight: '700', fontSize: 14 }}>Pago pendiente</Text>
-              <Text style={{ color: '#92400e', fontSize: 12, fontWeight: '500' }}>Alex Garcia • $50 • Vence 15/Mar</Text>
+              <Text
+                style={{ color: COLORS.text.primary, fontWeight: '700', fontSize: 14 }}>
+                Pago pendiente
+              </Text>
+              <Text style={{ color: COLORS.warning, fontSize: 12, fontWeight: '500' }}>
+                Alex García • $50 • Vence 15/Mar
+              </Text>
             </View>
-            <AlertCircle size={18} color="#d97706" strokeWidth={2} />
+            <AlertCircle size={18} color={COLORS.warning} strokeWidth={2} />
           </View>
         </View>
 
+        {/* Actions */}
         <View style={{ paddingBottom: 32 }}>
-          <SectionHeader title="Acciones" />
-          <View style={{ flexDirection: 'row', gap: 12 }}>
+          <SectionHeader title="Acciones Rápidas" />
+          <View style={{ flexDirection: 'row', gap: 10 }}>
             <TouchableOpacity
               onPress={() => router.push('/routines')}
               activeOpacity={0.85}
-              style={{ flex: 1, backgroundColor: '#1e1b4b', borderRadius: 18, padding: 20, alignItems: 'center', gap: 10 }}>
-              <ClipboardList size={28} color="#818cf8" strokeWidth={1.8} />
-              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Mis Rutinas</Text>
+              style={{
+                flex: 1,
+                backgroundColor: COLORS.bg.secondary,
+                borderRadius: 18,
+                padding: 20,
+                alignItems: 'center',
+                gap: 10,
+                borderWidth: 1,
+                borderColor: COLORS.bg.border,
+              }}>
+              <View
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 14,
+                  backgroundColor: COLORS.infoDim,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                <ClipboardList size={24} color={COLORS.info} strokeWidth={1.8} />
+              </View>
+              <Text style={{ color: COLORS.text.primary, fontWeight: '700', fontSize: 13 }}>
+                Mis Rutinas
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => router.push('/payments')}
               activeOpacity={0.85}
-              style={{ flex: 1, backgroundColor: '#0a2e1e', borderRadius: 18, padding: 20, alignItems: 'center', gap: 10 }}>
-              <CreditCard size={28} color={EM} strokeWidth={1.8} />
-              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Pagos</Text>
+              style={{
+                flex: 1,
+                backgroundColor: COLORS.bg.secondary,
+                borderRadius: 18,
+                padding: 20,
+                alignItems: 'center',
+                gap: 10,
+                borderWidth: 1,
+                borderColor: COLORS.bg.border,
+              }}>
+              <View
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 14,
+                  backgroundColor: COLORS.accent.dim,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                <CreditCard size={24} color={AC} strokeWidth={1.8} />
+              </View>
+              <Text style={{ color: COLORS.text.primary, fontWeight: '700', fontSize: 13 }}>
+                Pagos
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -383,7 +831,7 @@ function TrainerDashboard() {
   );
 }
 
-// ─── ADMIN DASHBOARD ──────────────────────────────────────────────────────────
+// ─── ADMIN ─────────────────────────────────────────────────────────────────────
 function AdminDashboard() {
   const { user } = useAppStore();
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -395,54 +843,158 @@ function AdminDashboard() {
 
   const pending = payments.filter((p) => p.status === 'pending');
 
-  const reports = [
-    { icon: BarChart3, label: 'Ingresos del mes', value: '$150', sub: '3 pagos validados', color: EM, bg: '#0a2e1e' },
-    { icon: Users, label: 'Usuarios activos', value: '3', sub: 'De 4 registrados', color: '#818cf8', bg: '#1e1b4b' },
-    { icon: UserCheck, label: 'Entrenadores activos', value: '1', sub: 'Carlos Mendez', color: '#f97316', bg: '#431407' },
+  const kpis = [
+    {
+      icon: BarChart3,
+      value: '$150',
+      label: 'Ingresos',
+      sublabel: 'Este mes',
+      color: AC,
+    },
+    {
+      icon: Users,
+      value: '4',
+      label: 'Usuarios',
+      sublabel: 'Activos',
+      color: COLORS.info,
+    },
+    {
+      icon: AlertCircle,
+      value: String(pending.length),
+      label: 'Pendientes',
+      sublabel: 'Pagos por validar',
+      color: pending.length > 0 ? COLORS.warning : COLORS.success,
+    },
   ];
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#f5f5f5' }} showsVerticalScrollIndicator={false}>
-      <View style={{ backgroundColor: '#0a0a0a', paddingTop: 58, paddingBottom: 28, paddingHorizontal: 24 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <View style={{ gap: 2 }}>
-            <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, fontWeight: '500' }}>Panel Administracion</Text>
-            <Text style={{ color: '#fff', fontSize: 26, fontWeight: '800', letterSpacing: -0.8, marginTop: 1 }}>FitPro Admin</Text>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: COLORS.bg.primary }}
+      showsVerticalScrollIndicator={false}>
+      <StatusBar barStyle="light-content" />
+
+      <View
+        style={{
+          paddingTop: 60,
+          paddingBottom: 28,
+          paddingHorizontal: 24,
+          borderBottomWidth: 1,
+          borderBottomColor: COLORS.bg.border,
+        }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 28,
+          }}>
+          <View style={{ gap: 3 }}>
+            <Text style={{ color: COLORS.text.secondary, fontSize: 13 }}>
+              Panel Admin
+            </Text>
+            <Text
+              style={{
+                color: COLORS.text.primary,
+                fontSize: 28,
+                fontWeight: '800',
+                letterSpacing: -1,
+              }}>
+              FitPro
+            </Text>
           </View>
-          <Image source={{ uri: user?.avatar }} style={{ width: 46, height: 46, borderRadius: 23, borderWidth: 2, borderColor: '#c084fc' }} />
+          <Image
+            source={{ uri: user?.avatar }}
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 12,
+              borderWidth: 1.5,
+              borderColor: COLORS.orange,
+            }}
+          />
         </View>
-        <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.08)', marginVertical: 20 }} />
         <View style={{ flexDirection: 'row', gap: 10 }}>
-          <StatPill icon={Users} value="4" label="Usuarios" />
-          <StatPill icon={UserCheck} value="1" label="Trainers" />
-          <StatPill icon={AlertCircle} value={pending.length.toString()} label="Pendientes" />
+          {kpis.map((k) => (
+            <MetricCard
+              key={k.label}
+              icon={k.icon}
+              value={k.value}
+              label={k.label}
+              iconColor={k.color}
+            />
+          ))}
         </View>
       </View>
 
-      <View style={{ paddingHorizontal: 20, paddingTop: 24, gap: 24 }}>
+      <View style={{ paddingHorizontal: 20, paddingTop: 28, gap: 24 }}>
         {pending.length > 0 && (
           <View>
-            <SectionHeader title="Pagos Pendientes" action="Ver todos" onAction={() => router.push('/payments')} />
-            <View style={{ backgroundColor: '#fff', borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: '#f0f0f0' }}>
+            <SectionHeader
+              title="Pagos Pendientes"
+              action="Ver todos"
+              onAction={() => router.push('/payments')}
+            />
+            <View
+              style={{
+                backgroundColor: COLORS.bg.secondary,
+                borderRadius: 20,
+                overflow: 'hidden',
+                borderWidth: 1,
+                borderColor: COLORS.bg.border,
+              }}>
               {pending.map((p, i) => (
                 <TouchableOpacity
                   key={p.id}
                   onPress={() => router.push('/payments')}
                   activeOpacity={0.85}
                   style={{
-                    flexDirection: 'row', alignItems: 'center', gap: 14,
-                    paddingHorizontal: 18, paddingVertical: 16,
-                    borderBottomWidth: i < pending.length - 1 ? 1 : 0, borderBottomColor: '#f4f4f5',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 14,
+                    paddingHorizontal: 18,
+                    paddingVertical: 16,
+                    borderBottomWidth: i < pending.length - 1 ? 1 : 0,
+                    borderBottomColor: COLORS.bg.border,
                   }}>
-                  <View style={{ width: 42, height: 42, borderRadius: 12, backgroundColor: '#fef3c7', alignItems: 'center', justifyContent: 'center' }}>
-                    <CreditCard size={18} color="#d97706" strokeWidth={2} />
+                  <View
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 11,
+                      backgroundColor: COLORS.warningDim,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                    <CreditCard size={17} color={COLORS.warning} strokeWidth={2} />
                   </View>
                   <View style={{ flex: 1, gap: 2 }}>
-                    <Text style={{ color: '#0f0f0f', fontWeight: '700', fontSize: 13 }}>{p.plan}</Text>
-                    <Text style={{ color: '#a1a1aa', fontSize: 12 }}>${p.amount} • Vence {p.dueDate}</Text>
+                    <Text
+                      style={{
+                        color: COLORS.text.primary,
+                        fontWeight: '700',
+                        fontSize: 13,
+                      }}>
+                      {p.plan}
+                    </Text>
+                    <Text style={{ color: COLORS.text.secondary, fontSize: 12 }}>
+                      ${p.amount} • Vence {p.dueDate}
+                    </Text>
                   </View>
-                  <View style={{ backgroundColor: '#fef3c7', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
-                    <Text style={{ color: '#92400e', fontSize: 11, fontWeight: '700' }}>Pendiente</Text>
+                  <View
+                    style={{
+                      backgroundColor: COLORS.warningDim,
+                      borderRadius: 8,
+                      paddingHorizontal: 10,
+                      paddingVertical: 4,
+                    }}>
+                    <Text
+                      style={{
+                        color: COLORS.warning,
+                        fontSize: 11,
+                        fontWeight: '700',
+                      }}>
+                      Pendiente
+                    </Text>
                   </View>
                 </TouchableOpacity>
               ))}
@@ -450,21 +1002,79 @@ function AdminDashboard() {
           </View>
         )}
 
+        {/* Reports */}
         <View style={{ paddingBottom: 32 }}>
-          <SectionHeader title="Reportes" />
+          <SectionHeader title="Resumen General" />
           <View style={{ gap: 10 }}>
-            {reports.map((r) => (
+            {[
+              {
+                icon: BarChart3,
+                label: 'Ingresos del mes',
+                value: '$150',
+                sub: '3 pagos validados',
+                color: AC,
+              },
+              {
+                icon: Users,
+                label: 'Usuarios registrados',
+                value: '4',
+                sub: 'De 4 activos',
+                color: COLORS.info,
+              },
+              {
+                icon: UserCheck,
+                label: 'Entrenadores activos',
+                value: '1',
+                sub: 'Carlos Méndez',
+                color: COLORS.orange,
+              },
+            ].map((r) => (
               <View
                 key={r.label}
-                style={{ backgroundColor: '#fff', borderRadius: 18, padding: 18, flexDirection: 'row', alignItems: 'center', gap: 14, borderWidth: 1, borderColor: '#f0f0f0' }}>
-                <View style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: r.bg, alignItems: 'center', justifyContent: 'center' }}>
-                  <r.icon size={22} color={r.color} strokeWidth={2} />
+                style={{
+                  backgroundColor: COLORS.bg.secondary,
+                  borderRadius: 18,
+                  padding: 16,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 14,
+                  borderWidth: 1,
+                  borderColor: COLORS.bg.border,
+                }}>
+                <View
+                  style={{
+                    width: 46,
+                    height: 46,
+                    borderRadius: 13,
+                    backgroundColor: r.color + '18',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                  <r.icon size={20} color={r.color} strokeWidth={2} />
                 </View>
                 <View style={{ flex: 1, gap: 2 }}>
-                  <Text style={{ color: '#0f0f0f', fontWeight: '800', fontSize: 20, letterSpacing: -0.5 }}>{r.value}</Text>
-                  <Text style={{ color: '#3f3f46', fontWeight: '600', fontSize: 13 }}>{r.label}</Text>
-                  <Text style={{ color: '#a1a1aa', fontSize: 11 }}>{r.sub}</Text>
+                  <Text
+                    style={{
+                      color: COLORS.text.primary,
+                      fontWeight: '800',
+                      fontSize: 22,
+                      letterSpacing: -0.8,
+                    }}>
+                    {r.value}
+                  </Text>
+                  <Text
+                    style={{
+                      color: COLORS.text.secondary,
+                      fontWeight: '600',
+                      fontSize: 13,
+                    }}>
+                    {r.label}
+                  </Text>
+                  <Text style={{ color: COLORS.text.tertiary, fontSize: 11 }}>
+                    {r.sub}
+                  </Text>
                 </View>
+                <ArrowUpRight size={16} color={COLORS.text.tertiary} strokeWidth={2} />
               </View>
             ))}
           </View>
@@ -474,7 +1084,7 @@ function AdminDashboard() {
   );
 }
 
-// ─── MAIN ─────────────────────────────────────────────────────────────────────
+// ─── Main ──────────────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const { user, activeRole } = useAppStore();
   if (!user) return null;
