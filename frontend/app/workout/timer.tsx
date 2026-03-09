@@ -1,190 +1,262 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StatusBar,
+  Animated,
+  Easing,
+} from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTheme } from '@/lib/store';
+import { FONT, RADIUS, SPACING } from '@/lib/theme';
+import { ChevronLeft, Play, Pause, RotateCcw, Flag, Clock } from 'lucide-react-native';
 
-function pad(n: number) {
-  return String(n).padStart(2, '0');
-}
+function pad(n: number) { return String(n).padStart(2, '0'); }
 
 export default function TimerScreen() {
+  const router = useRouter();
+  const t = useTheme();
   const [running, setRunning] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [laps, setLaps] = useState<number[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const router = useRouter();
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const pulseLoop = useRef<Animated.CompositeAnimation | null>(null);
 
   useEffect(() => {
     if (running) {
       timerRef.current = setInterval(() => setElapsed((e) => e + 1), 1000);
+      pulseLoop.current = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, { toValue: 1.04, duration: 800, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1,    duration: 800, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        ])
+      );
+      pulseLoop.current.start();
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
+      pulseLoop.current?.stop();
+      pulseAnim.setValue(1);
     }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [running]);
 
-  const totalMs = elapsed * 1000;
   const hours = Math.floor(elapsed / 3600);
-  const mins = Math.floor((elapsed % 3600) / 60);
-  const secs = elapsed % 60;
+  const mins  = Math.floor((elapsed % 3600) / 60);
+  const secs  = elapsed % 60;
+
+  const addLap = () => {
+    if (!running) return;
+    setLaps((l) => [...l, elapsed]);
+  };
+
+  const reset = () => {
+    setRunning(false);
+    setElapsed(0);
+    setLaps([]);
+  };
+
+  const getLapDiff = (i: number) => {
+    const prev = i > 0 ? laps[i - 1] : 0;
+    const diff = laps[i] - prev;
+    return `${pad(Math.floor(diff / 60))}:${pad(diff % 60)}`;
+  };
+
+  const bestLapIdx = laps.length > 1
+    ? laps.reduce((best, l, i, arr) => {
+        const diff = l - (i > 0 ? arr[i - 1] : 0);
+        const bestDiff = arr[best] - (best > 0 ? arr[best - 1] : 0);
+        return diff < bestDiff ? i : best;
+      }, 0)
+    : -1;
 
   return (
-    <View className="flex-1 bg-background">
-      <View
-        style={{
-          backgroundColor: '#0d9e6e',
-          paddingTop: 52,
-          paddingBottom: 28,
-          paddingHorizontal: 20,
-          borderBottomLeftRadius: 28,
-          borderBottomRightRadius: 28,
-        }}>
-        <TouchableOpacity onPress={() => router.back()} className="mb-4">
-          <Text className="text-white/80">← Volver</Text>
-        </TouchableOpacity>
-        <Text className="text-white font-bold" style={{ fontSize: 24 }}>
-          Cronómetro
-        </Text>
+    <View style={{ flex: 1, backgroundColor: t.bg.primary }}>
+      <StatusBar barStyle={t.isDark ? 'light-content' : 'dark-content'} />
+
+      {/* Header */}
+      <View style={{ paddingTop: 60, paddingBottom: SPACING.lg, paddingHorizontal: SPACING.xxl, borderBottomWidth: 1, borderBottomColor: t.border.subtle }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <View style={{ gap: 4 }}>
+            <Text style={{ color: t.text.secondary, fontSize: FONT.sm, fontWeight: '500' }}>Fitness</Text>
+            <Text style={{ color: t.text.primary, fontSize: 30, fontWeight: '800', letterSpacing: -1 }}>Cronómetro</Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={{ marginTop: 6, width: 40, height: 40, borderRadius: RADIUS.md, backgroundColor: t.bg.card, borderWidth: 1, borderColor: t.border.default, alignItems: 'center', justifyContent: 'center' }}>
+            <ChevronLeft size={20} color={t.text.secondary} strokeWidth={2} />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      <View className="flex-1 items-center justify-center px-8">
-        {/* Clock display */}
-        <View
-          style={{
-            width: 260,
-            height: 260,
-            borderRadius: 130,
-            backgroundColor: running ? '#0d9e6e' : '#f8fafc',
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+        {/* ── Clock display ─────────────────────────────────────────────────── */}
+        <View style={{ alignItems: 'center', paddingTop: 48, paddingBottom: 40 }}>
+          <Animated.View style={{
+            transform: [{ scale: pulseAnim }],
+            width: 260, height: 260, borderRadius: 130,
+            backgroundColor: running ? t.accentDim : t.bg.card,
             borderWidth: 8,
-            borderColor: running ? '#0d9e6e' : '#e2e8f0',
-            alignItems: 'center',
-            justifyContent: 'center',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: 0.15,
-            shadowRadius: 20,
-            elevation: 8,
-            marginBottom: 40,
+            borderColor: running ? t.accent + '50' : t.border.default,
+            alignItems: 'center', justifyContent: 'center',
+            gap: 0,
           }}>
-          <Text
-            style={{
-              fontSize: 56,
-              fontWeight: '700',
-              color: running ? '#fff' : '#1e293b',
+            {/* Main time */}
+            <Text style={{
               fontVariant: ['tabular-nums'],
+              color: running ? t.accent : t.text.primary,
+              fontSize: hours > 0 ? 52 : 64,
+              fontWeight: '800',
+              letterSpacing: -2,
+              lineHeight: hours > 0 ? 60 : 72,
             }}>
-            {pad(hours > 0 ? hours : mins)}:{pad(hours > 0 ? mins : secs)}
-          </Text>
-          {hours === 0 && (
-            <Text
-              style={{
-                fontSize: 22,
-                color: running ? 'rgba(255,255,255,0.7)' : '#94a3b8',
-                fontVariant: ['tabular-nums'],
-              }}>
-              {pad(secs)}
+              {hours > 0
+                ? `${pad(hours)}:${pad(mins)}`
+                : `${pad(mins)}:${pad(secs)}`
+              }
             </Text>
+            {/* Seconds when showing hours:mins */}
+            {hours > 0 && (
+              <Text style={{ color: t.text.tertiary, fontSize: 28, fontWeight: '700', fontVariant: ['tabular-nums'], letterSpacing: -1 }}>
+                {pad(secs)}
+              </Text>
+            )}
+            {/* Milliseconds label */}
+            {hours === 0 && (
+              <Text style={{ color: t.text.tertiary, fontSize: FONT.sm, fontWeight: '500', marginTop: 4 }}>
+                {running ? 'en curso' : elapsed === 0 ? 'listo' : 'pausado'}
+              </Text>
+            )}
+          </Animated.View>
+
+          {/* Lap count badge */}
+          {laps.length > 0 && (
+            <View style={{ marginTop: 16, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: t.bg.card, borderRadius: RADIUS.lg, paddingHorizontal: 14, paddingVertical: 7, borderWidth: 1, borderColor: t.border.default }}>
+              <Flag size={13} color={t.accent} strokeWidth={2} />
+              <Text style={{ color: t.text.secondary, fontSize: FONT.sm, fontWeight: '700' }}>
+                {laps.length} {laps.length === 1 ? 'vuelta' : 'vueltas'}
+              </Text>
+            </View>
           )}
         </View>
 
-        {/* Buttons */}
-        <View className="flex-row gap-4 mb-8">
+        {/* ── Controls ────────────────────────────────────────────────────────── */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 20, marginBottom: 40 }}>
+          {/* Vuelta */}
           <TouchableOpacity
-            onPress={() => setLaps((l) => [...l, elapsed])}
+            onPress={addLap}
             disabled={!running}
+            activeOpacity={0.8}
             style={{
-              width: 72,
-              height: 72,
-              borderRadius: 36,
-              backgroundColor: running ? '#f1f5f9' : '#f8fafc',
-              alignItems: 'center',
-              justifyContent: 'center',
+              width: 70, height: 70, borderRadius: 35,
+              backgroundColor: running ? t.bg.card : t.bg.tertiary,
               borderWidth: 2,
-              borderColor: running ? '#e2e8f0' : '#f1f5f9',
+              borderColor: running ? t.border.strong : t.border.subtle,
+              alignItems: 'center', justifyContent: 'center', gap: 3,
             }}>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: running ? '#475569' : '#cbd5e1' }}>
+            <Flag size={18} color={running ? t.text.secondary : t.text.tertiary} strokeWidth={2} />
+            <Text style={{ color: running ? t.text.secondary : t.text.tertiary, fontSize: 10, fontWeight: '700' }}>
               Vuelta
             </Text>
           </TouchableOpacity>
 
+          {/* Play / Pause — main button */}
           <TouchableOpacity
             onPress={() => setRunning((r) => !r)}
+            activeOpacity={0.88}
             style={{
-              width: 88,
-              height: 88,
-              borderRadius: 44,
-              backgroundColor: running ? '#dc2626' : '#0d9e6e',
-              alignItems: 'center',
-              justifyContent: 'center',
-              shadowColor: running ? '#dc2626' : '#0d9e6e',
-              shadowOffset: { width: 0, height: 6 },
-              shadowOpacity: 0.4,
-              shadowRadius: 12,
-              elevation: 8,
+              width: 96, height: 96, borderRadius: 48,
+              backgroundColor: running ? t.danger : t.accent,
+              alignItems: 'center', justifyContent: 'center',
+              shadowColor: running ? t.danger : t.accent,
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.45,
+              shadowRadius: 16,
+              elevation: 10,
             }}>
-            <Text style={{ color: '#fff', fontSize: 24 }}>{running ? '⏸' : '▶'}</Text>
+            {running
+              ? <Pause size={34} color="#fff" strokeWidth={2.5} />
+              : <Play  size={34} color="#fff" strokeWidth={2.5} />
+            }
           </TouchableOpacity>
 
+          {/* Reset */}
           <TouchableOpacity
-            onPress={() => {
-              setRunning(false);
-              setElapsed(0);
-              setLaps([]);
-            }}
+            onPress={reset}
+            activeOpacity={0.8}
             style={{
-              width: 72,
-              height: 72,
-              borderRadius: 36,
-              backgroundColor: '#f1f5f9',
-              alignItems: 'center',
-              justifyContent: 'center',
+              width: 70, height: 70, borderRadius: 35,
+              backgroundColor: t.bg.card,
               borderWidth: 2,
-              borderColor: '#e2e8f0',
+              borderColor: t.border.default,
+              alignItems: 'center', justifyContent: 'center', gap: 3,
             }}>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: '#475569' }}>Reset</Text>
+            <RotateCcw size={18} color={t.text.secondary} strokeWidth={2} />
+            <Text style={{ color: t.text.secondary, fontSize: 10, fontWeight: '700' }}>Reset</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Laps */}
+        {/* ── Laps list ──────────────────────────────────────────────────────── */}
         {laps.length > 0 && (
-          <View
-            style={{
-              backgroundColor: '#fff',
-              borderRadius: 20,
-              padding: 16,
-              width: '100%',
-              borderWidth: 1,
-              borderColor: '#f1f5f9',
-            }}>
-            <Text className="text-foreground font-bold text-base mb-3">
-              Vueltas ({laps.length})
-            </Text>
-            {laps
-              .slice()
-              .reverse()
-              .map((lap, i) => {
-                const prev = laps[laps.length - 1 - i - 1] ?? 0;
-                const diff = lap - prev;
-                const dm = Math.floor(diff / 60);
-                const ds = diff % 60;
+          <View style={{ marginHorizontal: SPACING.xl }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+              <View style={{ width: 30, height: 30, borderRadius: RADIUS.md, backgroundColor: t.accentDim, alignItems: 'center', justifyContent: 'center' }}>
+                <Clock size={14} color={t.accent} strokeWidth={2} />
+              </View>
+              <Text style={{ color: t.text.primary, fontWeight: '800', fontSize: FONT.lg, letterSpacing: -0.3 }}>
+                Vueltas
+              </Text>
+            </View>
+
+            <View style={{ backgroundColor: t.bg.card, borderRadius: RADIUS.xl, overflow: 'hidden', borderWidth: 1, borderColor: t.border.subtle }}>
+              {/* Header */}
+              <View style={{ flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: t.border.subtle }}>
+                {['Vuelta', 'Parcial', 'Total'].map((h) => (
+                  <Text key={h} style={{ flex: 1, textAlign: 'center', color: t.text.tertiary, fontSize: 10, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                    {h}
+                  </Text>
+                ))}
+              </View>
+
+              {/* Rows — reversed (newest first) */}
+              {[...laps].reverse().map((lap, ri) => {
+                const i = laps.length - 1 - ri;
+                const isBest = i === bestLapIdx;
                 return (
-                  <View key={i} className="flex-row justify-between py-2 border-b border-border">
-                    <Text className="text-muted-foreground text-sm">
-                      Vuelta {laps.length - i}
+                  <View
+                    key={i}
+                    style={{
+                      flexDirection: 'row', alignItems: 'center',
+                      paddingHorizontal: 16, paddingVertical: 13,
+                      borderBottomWidth: ri < laps.length - 1 ? 1 : 0,
+                      borderBottomColor: t.border.subtle,
+                      backgroundColor: isBest ? t.successDim : 'transparent',
+                    }}>
+                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                      <Text style={{ color: t.text.secondary, fontSize: FONT.sm, fontWeight: '700' }}>
+                        {i + 1}
+                      </Text>
+                      {isBest && (
+                        <View style={{ backgroundColor: t.success, borderRadius: 4, paddingHorizontal: 5, paddingVertical: 1 }}>
+                          <Text style={{ color: '#fff', fontSize: 9, fontWeight: '800' }}>MEJOR</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={{ flex: 1, textAlign: 'center', color: isBest ? t.success : t.text.primary, fontWeight: '700', fontSize: FONT.base, fontVariant: ['tabular-nums'] }}>
+                      {getLapDiff(i)}
                     </Text>
-                    <Text className="text-foreground font-semibold text-sm">
-                      +{pad(dm)}:{pad(ds)}
-                    </Text>
-                    <Text className="text-muted-foreground text-sm">
+                    <Text style={{ flex: 1, textAlign: 'center', color: t.text.tertiary, fontSize: FONT.sm, fontVariant: ['tabular-nums'] }}>
                       {pad(Math.floor(lap / 60))}:{pad(lap % 60)}
                     </Text>
                   </View>
                 );
               })}
+            </View>
           </View>
         )}
-      </View>
+      </ScrollView>
     </View>
   );
 }
