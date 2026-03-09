@@ -154,20 +154,27 @@ export default function LoginScreen() {
           </View>
 
           {/* Términos y condiciones */}
-          <TouchableOpacity
-            onPress={() => setAcceptedTerms(!acceptedTerms)}
-            activeOpacity={0.7}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 }}>
-            {acceptedTerms
-              ? <CheckSquare size={20} color={t.accent} strokeWidth={2} />
-              : <Square size={20} color={t.text.tertiary} strokeWidth={2} />}
-            <Text style={{ flex: 1, color: t.text.secondary, fontSize: FONT.sm, lineHeight: 20 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 }}>
+            <TouchableOpacity onPress={() => setAcceptedTerms(!acceptedTerms)} activeOpacity={0.7}>
+              {acceptedTerms
+                ? <CheckSquare size={20} color={t.accent} strokeWidth={2} />
+                : <Square size={20} color={t.text.tertiary} strokeWidth={2} />}
+            </TouchableOpacity>
+            <Text style={{ flex: 1, color: t.text.secondary, fontSize: FONT.sm, lineHeight: 22 }}>
               Acepto los{' '}
-              <Text style={{ color: t.accent, fontWeight: '700' }}>Términos y Condiciones</Text>
+              <Text
+                onPress={() => router.push('/auth/terms' as any)}
+                style={{ color: t.accent, fontWeight: '700' }}>
+                Términos y Condiciones
+              </Text>
               {' '}y la{' '}
-              <Text style={{ color: t.accent, fontWeight: '700' }}>Política de Privacidad</Text>
+              <Text
+                onPress={() => router.push('/auth/terms?type=privacy' as any)}
+                style={{ color: t.accent, fontWeight: '700' }}>
+                Política de Privacidad
+              </Text>
             </Text>
-          </TouchableOpacity>
+          </View>
 
           {/* CTA */}
           <TouchableOpacity
