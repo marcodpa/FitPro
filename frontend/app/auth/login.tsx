@@ -23,6 +23,8 @@ import {
   ArrowRight,
   Zap,
   ChevronRight,
+  CheckSquare,
+  Square,
 } from 'lucide-react-native';
 
 export default function LoginScreen() {
@@ -31,6 +33,7 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [focused, setFocused] = useState<string | null>(null);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const router = useRouter();
   const { login } = useAppStore();
   const t = useTheme();
@@ -38,6 +41,10 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Campos incompletos', 'Por favor completa todos los campos.');
+      return;
+    }
+    if (!acceptedTerms) {
+      Alert.alert('Términos y condiciones', 'Debes aceptar los términos y condiciones para continuar.');
       return;
     }
     setLoading(true);
@@ -146,12 +153,28 @@ export default function LoginScreen() {
             </View>
           </View>
 
+          {/* Términos y condiciones */}
+          <TouchableOpacity
+            onPress={() => setAcceptedTerms(!acceptedTerms)}
+            activeOpacity={0.7}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 }}>
+            {acceptedTerms
+              ? <CheckSquare size={20} color={t.accent} strokeWidth={2} />
+              : <Square size={20} color={t.text.tertiary} strokeWidth={2} />}
+            <Text style={{ flex: 1, color: t.text.secondary, fontSize: FONT.sm, lineHeight: 20 }}>
+              Acepto los{' '}
+              <Text style={{ color: t.accent, fontWeight: '700' }}>Términos y Condiciones</Text>
+              {' '}y la{' '}
+              <Text style={{ color: t.accent, fontWeight: '700' }}>Política de Privacidad</Text>
+            </Text>
+          </TouchableOpacity>
+
           {/* CTA */}
           <TouchableOpacity
             onPress={handleLogin}
-            disabled={loading}
+            disabled={loading || !acceptedTerms}
             activeOpacity={0.85}
-            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: t.accent, borderRadius: RADIUS.lg, paddingVertical: 18, marginTop: 6 }}>
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: acceptedTerms ? t.accent : t.text.tertiary, borderRadius: RADIUS.lg, paddingVertical: 18, marginTop: 6, opacity: acceptedTerms ? 1 : 0.5 }}>
             {loading
               ? <ActivityIndicator color={t.accentText} />
               : <>
