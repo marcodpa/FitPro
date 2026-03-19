@@ -6,7 +6,7 @@ class Routine(models.Model):
 
     name        = models.CharField(max_length=200)
     description = models.TextField()
-    trainer     = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='created_routines', limit_choices_to={'role__in': ['trainer','admin']})
+    trainer     = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='created_routines')
     assigned_to = models.ForeignKey('users.User', null=True, blank=True, on_delete=models.SET_NULL, related_name='assigned_routines')
     duration    = models.PositiveIntegerField(help_text='Minutos estimados')
     difficulty  = models.CharField(max_length=20, choices=DIFFICULTIES, default='beginner')
