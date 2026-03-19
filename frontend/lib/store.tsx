@@ -1,6 +1,15 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { User, UserRole } from './types';
 import { getTheme, type Theme } from './theme';
+
+const STORAGE_KEYS = {
+  USER: '@fitpro:user',
+  TOKEN: '@fitpro:token',
+  ONBOARDED: '@fitpro:onboarded',
+  DARK_MODE: '@fitpro:darkMode',
+  VOICE: '@fitpro:voice',
+};
 
 interface AppState {
   // Auth
@@ -17,6 +26,8 @@ interface AppState {
   theme: Theme;
   // Voice
   voiceEnabled: boolean;
+  // Hydration
+  isHydrated: boolean;
   // Actions
   login: (user: User, token: string) => void;
   logout: () => void;
@@ -35,35 +46,90 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [isOnboarded, setIsOnboarded] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(true); // default dark
+  const [isDarkMode, setIsDarkMode] = useState(true);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Hydrate from AsyncStorage on mount
+  useEffect(() => {
+    const hydrate = async () => {
+      try {
+        const [storedUser, storedToken, storedOnboarded, storedDark, storedVoice] =
+          await Promise.all([
+            AsyncStorage.getItem(STORAGE_KEYS.USER),
+            AsyncStorage.getItem(STORAGE_KEYS.TOKEN),
+            AsyncStorage.getItem(STORAGE_KEYS.ONBOARDED),
+            AsyncStorage.getItem(STORAGE_KEYS.DARK_MODE),
+            AsyncStorage.getItem(STORAGE_KEYS.VOICE),
+          ]);
+
+        if (storedUser) setUser(JSON.parse(storedUser));
+        if (storedToken) setToken(storedToken);
+        if (storedOnboarded === 'true') setIsOnboarded(true);
+        if (storedDark !== null) setIsDarkMode(storedDark === 'true');
+        if (storedVoice === 'true') setVoiceEnabled(true);
+      } catch (_) {
+        // ignore storage errors
+      } finally {
+        setIsHydrated(true);
+      }
+    };
+    hydrate();
+  }, []);
 
   const login = useCallback((u: User, t: string) => {
     setUser(u);
     setToken(t);
+    AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(u));
+    AsyncStorage.setItem(STORAGE_KEYS.TOKEN, t);
   }, []);
 
   const logout = useCallback(() => {
     setUser(null);
     setToken(null);
+    AsyncStorage.removeItem(STORAGE_KEYS.USER);
+    AsyncStorage.removeItem(STORAGE_KEYS.TOKEN);
   }, []);
 
-  const setOnboarded = useCallback(() => setIsOnboarded(true), []);
+  const setOnboarded = useCallback(() => {
+    setIsOnboarded(true);
+    AsyncStorage.setItem(STORAGE_KEYS.ONBOARDED, 'true');
+  }, []);
 
   const setRole = useCallback(
     (role: UserRole) => {
-      if (user) setUser({ ...user, role });
+      if (user) {
+        const updated = { ...user, role };
+        setUser(updated);
+        AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updated));
+      }
     },
     [user]
   );
 
   const toggleOffline = useCallback(() => setIsOffline((v) => !v), []);
-  const toggleDarkMode = useCallback(() => setIsDarkMode((v) => !v), []);
-  const toggleVoice = useCallback(() => setVoiceEnabled((v) => !v), []);
+
+  const toggleDarkMode = useCallback(() => {
+    setIsDarkMode((v) => {
+      AsyncStorage.setItem(STORAGE_KEYS.DARK_MODE, String(!v));
+      return !v;
+    });
+  }, []);
+
+  const toggleVoice = useCallback(() => {
+    setVoiceEnabled((v) => {
+      AsyncStorage.setItem(STORAGE_KEYS.VOICE, String(!v));
+      return !v;
+    });
+  }, []);
 
   const updateUser = useCallback(
     (data: Partial<User>) => {
-      if (user) setUser({ ...user, ...data });
+      if (user) {
+        const updated = { ...user, ...data };
+        setUser(updated);
+        AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updated));
+      }
     },
     [user]
   );
@@ -80,6 +146,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         isDarkMode,
         theme: getTheme(isDarkMode),
         voiceEnabled,
+        isHydrated,
         login,
         logout,
         setOnboarded,

@@ -11,14 +11,16 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAppStore } from '@/lib/store';
+import { useAppStore, useTheme } from '@/lib/store';
 import { FakeAuthService } from '@/lib/services';
+import { FONT, RADIUS, SPACING } from '@/lib/theme';
 import type { UserRole } from '@/lib/types';
+import { User, PersonStanding, Dumbbell, ArrowLeft } from 'lucide-react-native';
 
-const ROLES: { label: string; value: UserRole; icon: string }[] = [
-  { label: 'Usuario', value: 'user', icon: '🙋' },
-  { label: 'Cliente', value: 'client', icon: '🏃' },
-  { label: 'Entrenador', value: 'trainer', icon: '🏋️' },
+const ROLES: { label: string; value: UserRole; icon: React.ReactNode }[] = [
+  { label: 'Cliente', value: 'client', icon: null },
+  { label: 'Entrenador', value: 'trainer', icon: null },
+  { label: 'Usuario', value: 'user', icon: null },
 ];
 
 export default function RegisterScreen() {
@@ -27,12 +29,18 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<UserRole>('client');
   const [loading, setLoading] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
   const router = useRouter();
   const { login } = useAppStore();
+  const t = useTheme();
 
   const handleRegister = async () => {
     if (!name || !email || !password) {
       Alert.alert('Error', 'Completa todos los campos');
+      return;
+    }
+    if (password.length < 6) {
+      Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres');
       return;
     }
     setLoading(true);
@@ -47,99 +55,200 @@ export default function RegisterScreen() {
     }
   };
 
+  const roleIcons: Record<UserRole, React.ReactNode> = {
+    client: <PersonStanding size={22} color={role === 'client' ? t.accentText : t.text.secondary} />,
+    trainer: <Dumbbell size={22} color={role === 'trainer' ? t.accentText : t.text.secondary} />,
+    user: <User size={22} color={role === 'user' ? t.accentText : t.text.secondary} />,
+    admin: <User size={22} color={role === 'admin' ? t.accentText : t.text.secondary} />,
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      className="flex-1 bg-background">
+      style={{ flex: 1, backgroundColor: t.bg.primary }}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
         {/* Header */}
         <View
           style={{
-            backgroundColor: '#0d9e6e',
+            backgroundColor: t.bg.secondary,
             paddingTop: 60,
-            paddingBottom: 32,
-            paddingHorizontal: 32,
-            borderBottomLeftRadius: 40,
-            borderBottomRightRadius: 40,
+            paddingBottom: SPACING.xxxl,
+            paddingHorizontal: SPACING.xxxl,
+            borderBottomWidth: 1,
+            borderBottomColor: t.border.subtle,
           }}>
-          <TouchableOpacity onPress={() => router.back()} className="mb-4">
-            <Text className="text-white/80 text-base">← Volver</Text>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: SPACING.xs,
+              marginBottom: SPACING.lg,
+            }}>
+            <ArrowLeft size={18} color={t.text.secondary} />
+            <Text style={{ color: t.text.secondary, fontSize: FONT.base }}>Volver</Text>
           </TouchableOpacity>
-          <Text className="text-white font-bold" style={{ fontSize: 28 }}>
+
+          <View
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: RADIUS.full,
+              backgroundColor: t.accentDim,
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: SPACING.md,
+            }}>
+            <Text style={{ fontSize: 28 }}>💪</Text>
+          </View>
+          <Text style={{ color: t.text.primary, fontWeight: '800', fontSize: FONT.xxxl }}>
             Crear Cuenta
           </Text>
-          <Text className="text-white/80 text-sm mt-1">Únete a la comunidad FitPro</Text>
+          <Text style={{ color: t.text.secondary, fontSize: FONT.base, marginTop: 4 }}>
+            Únete a la comunidad FitPro
+          </Text>
         </View>
 
-        <View className="flex-1 px-8 pt-8">
+        <View style={{ flex: 1, paddingHorizontal: SPACING.xxxl, paddingTop: SPACING.xxl }}>
           {/* Role selector */}
-          <View className="mb-6">
-            <Text className="text-muted-foreground text-sm mb-3 font-medium">Soy un...</Text>
-            <View className="flex-row gap-3">
-              {ROLES.map((r) => (
-                <TouchableOpacity
-                  key={r.value}
-                  onPress={() => setRole(r.value)}
-                  style={{
-                    flex: 1,
-                    borderRadius: 12,
-                    paddingVertical: 12,
-                    alignItems: 'center',
-                    backgroundColor: role === r.value ? '#0d9e6e' : '#f1f5f9',
-                    borderWidth: 2,
-                    borderColor: role === r.value ? '#0d9e6e' : 'transparent',
-                  }}>
-                  <Text style={{ fontSize: 24 }}>{r.icon}</Text>
-                  <Text
+          <View style={{ marginBottom: SPACING.xxl }}>
+            <Text
+              style={{
+                color: t.text.secondary,
+                fontSize: FONT.sm,
+                marginBottom: SPACING.sm,
+                fontWeight: '600',
+                letterSpacing: 0.5,
+                textTransform: 'uppercase',
+              }}>
+              Soy un...
+            </Text>
+            <View style={{ flexDirection: 'row', gap: SPACING.sm }}>
+              {ROLES.map((r) => {
+                const isSelected = role === r.value;
+                return (
+                  <TouchableOpacity
+                    key={r.value}
+                    onPress={() => setRole(r.value)}
                     style={{
-                      fontSize: 12,
-                      fontWeight: '600',
-                      color: role === r.value ? '#fff' : '#64748b',
-                      marginTop: 4,
+                      flex: 1,
+                      borderRadius: RADIUS.lg,
+                      paddingVertical: SPACING.md,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: SPACING.xs,
+                      backgroundColor: isSelected ? t.accent : t.bg.card,
+                      borderWidth: 1.5,
+                      borderColor: isSelected ? t.accent : t.border.default,
                     }}>
-                    {r.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                    {roleIcons[r.value]}
+                    <Text
+                      style={{
+                        fontSize: FONT.sm,
+                        fontWeight: '700',
+                        color: isSelected ? t.accentText : t.text.secondary,
+                      }}>
+                      {r.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
 
           {/* Name */}
-          <View className="mb-4">
-            <Text className="text-muted-foreground text-sm mb-2 font-medium">Nombre completo</Text>
+          <View style={{ marginBottom: SPACING.md }}>
+            <Text
+              style={{
+                color: t.text.secondary,
+                fontSize: FONT.sm,
+                marginBottom: SPACING.xs,
+                fontWeight: '600',
+              }}>
+              Nombre completo
+            </Text>
             <TextInput
               value={name}
               onChangeText={setName}
               placeholder="Tu nombre"
-              className="bg-secondary text-foreground px-4 py-4 rounded-2xl text-base"
-              placeholderTextColor="#9ca3af"
+              onFocus={() => setFocusedField('name')}
+              onBlur={() => setFocusedField(null)}
+              style={{
+                backgroundColor: t.bg.input,
+                color: t.text.primary,
+                paddingHorizontal: SPACING.lg,
+                paddingVertical: SPACING.md + 2,
+                borderRadius: RADIUS.lg,
+                fontSize: FONT.base,
+                borderWidth: 1.5,
+                borderColor: focusedField === 'name' ? t.accent : t.border.default,
+              }}
+              placeholderTextColor={t.text.tertiary}
             />
           </View>
 
           {/* Email */}
-          <View className="mb-4">
-            <Text className="text-muted-foreground text-sm mb-2 font-medium">Email</Text>
+          <View style={{ marginBottom: SPACING.md }}>
+            <Text
+              style={{
+                color: t.text.secondary,
+                fontSize: FONT.sm,
+                marginBottom: SPACING.xs,
+                fontWeight: '600',
+              }}>
+              Email
+            </Text>
             <TextInput
               value={email}
               onChangeText={setEmail}
               placeholder="tu@email.com"
               keyboardType="email-address"
               autoCapitalize="none"
-              className="bg-secondary text-foreground px-4 py-4 rounded-2xl text-base"
-              placeholderTextColor="#9ca3af"
+              onFocus={() => setFocusedField('email')}
+              onBlur={() => setFocusedField(null)}
+              style={{
+                backgroundColor: t.bg.input,
+                color: t.text.primary,
+                paddingHorizontal: SPACING.lg,
+                paddingVertical: SPACING.md + 2,
+                borderRadius: RADIUS.lg,
+                fontSize: FONT.base,
+                borderWidth: 1.5,
+                borderColor: focusedField === 'email' ? t.accent : t.border.default,
+              }}
+              placeholderTextColor={t.text.tertiary}
             />
           </View>
 
           {/* Password */}
-          <View className="mb-8">
-            <Text className="text-muted-foreground text-sm mb-2 font-medium">Contraseña</Text>
+          <View style={{ marginBottom: SPACING.xxl }}>
+            <Text
+              style={{
+                color: t.text.secondary,
+                fontSize: FONT.sm,
+                marginBottom: SPACING.xs,
+                fontWeight: '600',
+              }}>
+              Contraseña
+            </Text>
             <TextInput
               value={password}
               onChangeText={setPassword}
-              placeholder="Mínimo 8 caracteres"
+              placeholder="Mínimo 6 caracteres"
               secureTextEntry
-              className="bg-secondary text-foreground px-4 py-4 rounded-2xl text-base"
-              placeholderTextColor="#9ca3af"
+              onFocus={() => setFocusedField('password')}
+              onBlur={() => setFocusedField(null)}
+              style={{
+                backgroundColor: t.bg.input,
+                color: t.text.primary,
+                paddingHorizontal: SPACING.lg,
+                paddingVertical: SPACING.md + 2,
+                borderRadius: RADIUS.lg,
+                fontSize: FONT.base,
+                borderWidth: 1.5,
+                borderColor: focusedField === 'password' ? t.accent : t.border.default,
+              }}
+              placeholderTextColor={t.text.tertiary}
             />
           </View>
 
@@ -148,23 +257,41 @@ export default function RegisterScreen() {
             onPress={handleRegister}
             disabled={loading}
             style={{
-              backgroundColor: '#0d9e6e',
-              borderRadius: 16,
-              paddingVertical: 18,
+              backgroundColor: t.accent,
+              borderRadius: RADIUS.xl,
+              paddingVertical: SPACING.lg,
               alignItems: 'center',
-              marginBottom: 16,
+              marginBottom: SPACING.md,
+              opacity: loading ? 0.7 : 1,
             }}>
             {loading ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={t.accentText} />
             ) : (
-              <Text className="text-white font-bold text-base">Crear Cuenta</Text>
+              <Text
+                style={{ color: t.accentText, fontWeight: '800', fontSize: FONT.base + 1 }}>
+                Crear Cuenta
+              </Text>
             )}
           </TouchableOpacity>
 
-          <View className="flex-row justify-center mb-10">
-            <Text className="text-muted-foreground">¿Ya tienes cuenta? </Text>
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'center',
+              marginBottom: 40,
+            }}>
+            <Text style={{ color: t.text.tertiary, fontSize: FONT.base }}>
+              ¿Ya tienes cuenta?{' '}
+            </Text>
             <TouchableOpacity onPress={() => router.back()}>
-              <Text className="text-primary font-bold">Iniciar Sesión</Text>
+              <Text
+                style={{
+                  color: t.accent,
+                  fontWeight: '700',
+                  fontSize: FONT.base,
+                }}>
+                Iniciar Sesión
+              </Text>
             </TouchableOpacity>
           </View>
         </View>

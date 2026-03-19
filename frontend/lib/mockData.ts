@@ -484,12 +484,14 @@ export const MOCK_CONVERSATIONS: Conversation[] = [
     participants: [MOCK_USERS[0], MOCK_USERS[1]],
     lastMessage: MOCK_MESSAGES[5],
     updatedAt: new Date(Date.now() - 900000).toISOString(),
+    unreadCount: 3,
   },
   {
     id: 'c2',
     participants: [MOCK_USERS[2], MOCK_USERS[1]],
     lastMessage: MOCK_MESSAGES[7],
     updatedAt: new Date(Date.now() - 7100000).toISOString(),
+    unreadCount: 0,
   },
 ];
 

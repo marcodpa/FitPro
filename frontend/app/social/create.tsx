@@ -13,7 +13,9 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { FakeSocialService } from '@/lib/services';
-import { useAppStore } from '@/lib/store';
+import { useAppStore, useTheme } from '@/lib/store';
+import { FONT, RADIUS, SPACING } from '@/lib/theme';
+import { ArrowLeft, Send, Image as ImageIcon, Hash, X } from 'lucide-react-native';
 
 const SAMPLE_IMAGES = [
   'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600',
@@ -22,15 +24,21 @@ const SAMPLE_IMAGES = [
   'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=600',
 ];
 
+const HASHTAGS = ['#FitPro', '#Fitness', '#Entrenamiento', '#Progreso', '#Motivacion', '#Gym'];
+
 export default function CreatePostScreen() {
   const [text, setText] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [textFocused, setTextFocused] = useState(false);
   const { user } = useAppStore();
   const router = useRouter();
+  const t = useTheme();
+
+  const canPost = text.trim().length > 0;
 
   const handlePost = async () => {
-    if (!text.trim()) {
+    if (!canPost) {
       Alert.alert('Error', 'Escribe algo para publicar');
       return;
     }
@@ -49,132 +57,268 @@ export default function CreatePostScreen() {
     }
   };
 
+  const addHashtag = (tag: string) => {
+    setText((prev) => (prev.endsWith(' ') || prev === '' ? prev + tag : prev + ' ' + tag));
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      className="flex-1 bg-background">
+      style={{ flex: 1, backgroundColor: t.bg.primary }}>
+
       {/* Header */}
       <View
         style={{
-          backgroundColor: '#7c3aed',
-          paddingTop: 52,
-          paddingBottom: 20,
-          paddingHorizontal: 20,
-          borderBottomLeftRadius: 24,
-          borderBottomRightRadius: 24,
+          backgroundColor: t.bg.secondary,
+          paddingTop: 56,
+          paddingBottom: SPACING.md,
+          paddingHorizontal: SPACING.xl,
+          borderBottomWidth: 1,
+          borderBottomColor: t.border.subtle,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: SPACING.md,
         }}>
-        <View className="flex-row justify-between items-center">
-          <TouchableOpacity onPress={() => router.back()}>
-            <Text className="text-white/80 font-medium">Cancelar</Text>
-          </TouchableOpacity>
-          <Text className="text-white font-bold text-lg">Nueva Publicación</Text>
-          <TouchableOpacity
-            onPress={handlePost}
-            disabled={loading || !text.trim()}
-            style={{
-              backgroundColor: text.trim() ? 'rgba(255,255,255,0.25)' : 'transparent',
-              borderRadius: 10,
-              paddingHorizontal: 14,
-              paddingVertical: 6,
-            }}>
-            {loading ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={{
+            width: 38,
+            height: 38,
+            borderRadius: RADIUS.full,
+            backgroundColor: t.bg.elevated,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+          <ArrowLeft size={18} color={t.text.primary} />
+        </TouchableOpacity>
+
+        <Text style={{ color: t.text.primary, fontWeight: '800', fontSize: FONT.lg, flex: 1 }}>
+          Nueva Publicación
+        </Text>
+
+        <TouchableOpacity
+          onPress={handlePost}
+          disabled={loading || !canPost}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 6,
+            backgroundColor: canPost ? t.accent : t.bg.elevated,
+            borderRadius: RADIUS.full,
+            paddingHorizontal: SPACING.md,
+            paddingVertical: SPACING.sm - 2,
+            opacity: loading ? 0.7 : 1,
+          }}>
+          {loading ? (
+            <ActivityIndicator size="small" color={t.accentText} />
+          ) : (
+            <>
+              <Send size={14} color={canPost ? t.accentText : t.text.tertiary} />
               <Text
                 style={{
-                  color: text.trim() ? '#fff' : 'rgba(255,255,255,0.4)',
+                  color: canPost ? t.accentText : t.text.tertiary,
                   fontWeight: '700',
+                  fontSize: FONT.sm,
                 }}>
                 Publicar
               </Text>
-            )}
-          </TouchableOpacity>
-        </View>
+            </>
+          )}
+        </TouchableOpacity>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 20 }}>
-        {/* Author */}
-        <View className="flex-row items-center gap-3 mb-5">
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: SPACING.xl }}>
+        {/* Author row */}
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: SPACING.md,
+            marginBottom: SPACING.lg,
+          }}>
           <Image
             source={{ uri: user?.avatar }}
-            style={{ width: 48, height: 48, borderRadius: 24 }}
+            style={{
+              width: 46,
+              height: 46,
+              borderRadius: RADIUS.full,
+              borderWidth: 2,
+              borderColor: t.accent,
+            }}
           />
           <View>
-            <Text className="text-foreground font-bold text-base">{user?.name}</Text>
-            <Text className="text-muted-foreground text-xs">Publicando en FitPro Social</Text>
+            <Text style={{ color: t.text.primary, fontWeight: '700', fontSize: FONT.base }}>
+              {user?.name}
+            </Text>
+            <Text style={{ color: t.text.tertiary, fontSize: FONT.xs }}>
+              Publicando en FitPro Social
+            </Text>
           </View>
         </View>
 
         {/* Text input */}
-        <TextInput
-          value={text}
-          onChangeText={setText}
-          placeholder="¿Qué quieres compartir hoy? Comparte tu progreso, tips, motivación..."
-          multiline
-          numberOfLines={6}
-          className="text-foreground text-base"
-          placeholderTextColor="#94a3b8"
-          style={{ minHeight: 120, textAlignVertical: 'top', lineHeight: 24 }}
-        />
+        <View
+          style={{
+            backgroundColor: t.bg.card,
+            borderRadius: RADIUS.xl,
+            padding: SPACING.md,
+            borderWidth: 1.5,
+            borderColor: textFocused ? t.accent : t.border.default,
+            marginBottom: SPACING.xl,
+          }}>
+          <TextInput
+            value={text}
+            onChangeText={setText}
+            placeholder="¿Qué quieres compartir hoy? Comparte tu progreso, tips, motivación..."
+            multiline
+            onFocus={() => setTextFocused(true)}
+            onBlur={() => setTextFocused(false)}
+            style={{
+              color: t.text.primary,
+              fontSize: FONT.base,
+              minHeight: 120,
+              textAlignVertical: 'top',
+              lineHeight: 22,
+            }}
+            placeholderTextColor={t.text.tertiary}
+          />
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'flex-end',
+              marginTop: SPACING.sm,
+            }}>
+            <Text
+              style={{
+                color: text.length > 200 ? t.danger : t.text.tertiary,
+                fontSize: FONT.xs,
+              }}>
+              {text.length}/280
+            </Text>
+          </View>
+        </View>
 
-        <View style={{ height: 1, backgroundColor: '#f1f5f9', marginVertical: 20 }} />
-
-        {/* Image selection */}
-        <Text className="text-foreground font-bold text-base mb-3">
-          Añadir Imagen (opcional)
-        </Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View className="flex-row gap-3">
-            {SAMPLE_IMAGES.map((img) => (
+        {/* Hashtags */}
+        <View style={{ marginBottom: SPACING.xl }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: SPACING.xs,
+              marginBottom: SPACING.sm,
+            }}>
+            <Hash size={14} color={t.text.secondary} />
+            <Text
+              style={{
+                color: t.text.secondary,
+                fontSize: FONT.sm,
+                fontWeight: '600',
+              }}>
+              Hashtags sugeridos
+            </Text>
+          </View>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.xs }}>
+            {HASHTAGS.map((tag) => (
               <TouchableOpacity
-                key={img}
-                onPress={() => setSelectedImage(selectedImage === img ? null : img)}>
-                <Image
-                  source={{ uri: img }}
-                  style={{
-                    width: 100,
-                    height: 100,
-                    borderRadius: 12,
-                    borderWidth: 3,
-                    borderColor: selectedImage === img ? '#7c3aed' : 'transparent',
-                  }}
-                />
+                key={tag}
+                onPress={() => addHashtag(tag)}
+                style={{
+                  backgroundColor: t.accentDim,
+                  borderRadius: RADIUS.full,
+                  paddingHorizontal: SPACING.md,
+                  paddingVertical: SPACING.xs,
+                  borderWidth: 1,
+                  borderColor: t.accent + '40',
+                }}>
+                <Text style={{ color: t.accent, fontSize: FONT.sm, fontWeight: '600' }}>
+                  {tag}
+                </Text>
               </TouchableOpacity>
             ))}
           </View>
-        </ScrollView>
+        </View>
 
+        {/* Image selection */}
+        <View style={{ marginBottom: SPACING.xl }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: SPACING.xs,
+              marginBottom: SPACING.sm,
+            }}>
+            <ImageIcon size={14} color={t.text.secondary} />
+            <Text
+              style={{
+                color: t.text.secondary,
+                fontSize: FONT.sm,
+                fontWeight: '600',
+              }}>
+              Añadir imagen (opcional)
+            </Text>
+          </View>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={{ flexDirection: 'row', gap: SPACING.sm }}>
+              {SAMPLE_IMAGES.map((img) => {
+                const isSelected = selectedImage === img;
+                return (
+                  <TouchableOpacity
+                    key={img}
+                    onPress={() => setSelectedImage(isSelected ? null : img)}>
+                    <Image
+                      source={{ uri: img }}
+                      style={{
+                        width: 100,
+                        height: 100,
+                        borderRadius: RADIUS.lg,
+                        borderWidth: 2.5,
+                        borderColor: isSelected ? t.accent : 'transparent',
+                      }}
+                    />
+                    {isSelected && (
+                      <View
+                        style={{
+                          position: 'absolute',
+                          top: 6,
+                          right: 6,
+                          width: 22,
+                          height: 22,
+                          borderRadius: RADIUS.full,
+                          backgroundColor: t.accent,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}>
+                        <X size={12} color={t.accentText} strokeWidth={3} />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </ScrollView>
+        </View>
+
+        {/* Preview selected image */}
         {selectedImage && (
-          <View className="mt-4">
-            <Text className="text-muted-foreground text-xs mb-2">Vista previa:</Text>
+          <View style={{ marginBottom: SPACING.xl }}>
+            <Text
+              style={{
+                color: t.text.secondary,
+                fontSize: FONT.xs,
+                marginBottom: SPACING.sm,
+                fontWeight: '600',
+              }}>
+              Vista previa:
+            </Text>
             <Image
               source={{ uri: selectedImage }}
-              style={{ width: '100%', height: 200, borderRadius: 16 }}
+              style={{ width: '100%', height: 200, borderRadius: RADIUS.xl }}
             />
           </View>
         )}
 
-        {/* Hashtag suggestions */}
-        <View className="mt-6">
-          <Text className="text-muted-foreground text-xs mb-2 font-medium">Hashtags sugeridos</Text>
-          <View className="flex-row flex-wrap gap-2">
-            {['#FitPro', '#Fitness', '#Entrenamiento', '#Progreso', '#Motivacion', '#Gym'].map(
-              (tag) => (
-                <TouchableOpacity
-                  key={tag}
-                  onPress={() => setText((t) => t + ' ' + tag)}
-                  style={{
-                    backgroundColor: '#f0f4ff',
-                    borderRadius: 10,
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                  }}>
-                  <Text style={{ color: '#4f46e5', fontSize: 13, fontWeight: '500' }}>{tag}</Text>
-                </TouchableOpacity>
-              )
-            )}
-          </View>
-        </View>
+        <View style={{ height: 40 }} />
       </ScrollView>
     </KeyboardAvoidingView>
   );

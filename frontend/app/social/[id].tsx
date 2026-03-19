@@ -9,12 +9,20 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { FakeSocialService } from '@/lib/services';
-import { useAppStore } from '@/lib/store';
+import { useAppStore, useTheme } from '@/lib/store';
+import { FONT, RADIUS, SPACING } from '@/lib/theme';
 import type { Post } from '@/lib/types';
+import {
+  ArrowLeft,
+  Heart,
+  MessageCircle,
+  Send,
+  Flag,
+  MoreHorizontal,
+} from 'lucide-react-native';
 
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -32,8 +40,10 @@ export default function PostDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [commentFocused, setCommentFocused] = useState(false);
   const { user } = useAppStore();
   const router = useRouter();
+  const t = useTheme();
 
   useEffect(() => {
     if (!id) return;
@@ -64,8 +74,8 @@ export default function PostDetailScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 items-center justify-center bg-background">
-        <ActivityIndicator size="large" color="#7c3aed" />
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: t.bg.primary }}>
+        <ActivityIndicator size="large" color={t.accent} />
       </View>
     );
   }
@@ -76,95 +86,238 @@ export default function PostDetailScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      className="flex-1 bg-background">
+      style={{ flex: 1, backgroundColor: t.bg.primary }}>
+
       {/* Header */}
       <View
         style={{
-          backgroundColor: '#7c3aed',
-          paddingTop: 52,
-          paddingBottom: 20,
-          paddingHorizontal: 20,
-          borderBottomLeftRadius: 24,
-          borderBottomRightRadius: 24,
+          backgroundColor: t.bg.secondary,
+          paddingTop: 56,
+          paddingBottom: SPACING.md,
+          paddingHorizontal: SPACING.xl,
+          borderBottomWidth: 1,
+          borderBottomColor: t.border.subtle,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: SPACING.md,
         }}>
-        <TouchableOpacity onPress={() => router.back()} className="mb-3">
-          <Text className="text-white/80">← Volver</Text>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={{
+            width: 38,
+            height: 38,
+            borderRadius: RADIUS.full,
+            backgroundColor: t.bg.elevated,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+          <ArrowLeft size={18} color={t.text.primary} />
         </TouchableOpacity>
-        <Text className="text-white font-bold text-xl">Publicación</Text>
+        <Text style={{ color: t.text.primary, fontWeight: '800', fontSize: FONT.lg }}>
+          Publicación
+        </Text>
+        <View style={{ flex: 1 }} />
+        <TouchableOpacity
+          style={{
+            width: 38,
+            height: 38,
+            borderRadius: RADIUS.full,
+            backgroundColor: t.bg.elevated,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+          <MoreHorizontal size={18} color={t.text.secondary} />
+        </TouchableOpacity>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
-        {/* Author */}
-        <View className="flex-row items-center gap-3 mb-4">
-          <Image
-            source={{ uri: post.author.avatar }}
-            style={{ width: 48, height: 48, borderRadius: 24 }}
-          />
-          <View>
-            <Text className="text-foreground font-bold text-base">{post.author.name}</Text>
-            <Text className="text-muted-foreground text-xs">{timeAgo(post.createdAt)}</Text>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: SPACING.xl }}>
+        {/* Author card */}
+        <View
+          style={{
+            backgroundColor: t.bg.card,
+            borderRadius: RADIUS.xxl,
+            padding: SPACING.xl,
+            borderWidth: 1,
+            borderColor: t.border.subtle,
+            marginBottom: SPACING.md,
+          }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: SPACING.md,
+              marginBottom: SPACING.md,
+            }}>
+            <Image
+              source={{ uri: post.author.avatar }}
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: RADIUS.full,
+                borderWidth: 2,
+                borderColor: t.accent,
+              }}
+            />
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: t.text.primary, fontWeight: '700', fontSize: FONT.base }}>
+                {post.author.name}
+              </Text>
+              <Text style={{ color: t.text.tertiary, fontSize: FONT.xs }}>
+                {timeAgo(post.createdAt)}
+              </Text>
+            </View>
           </View>
-        </View>
 
-        {/* Content */}
-        <Text className="text-foreground text-base leading-6 mb-4">{post.text}</Text>
-        {post.imageUrl && (
-          <Image
-            source={{ uri: post.imageUrl }}
-            style={{ width: '100%', height: 250, borderRadius: 16, marginBottom: 16 }}
-          />
-        )}
+          {/* Content */}
+          <Text
+            style={{
+              color: t.text.primary,
+              fontSize: FONT.base,
+              lineHeight: 22,
+              marginBottom: post.imageUrl ? SPACING.md : 0,
+            }}>
+            {post.text}
+          </Text>
+
+          {post.imageUrl && (
+            <Image
+              source={{ uri: post.imageUrl }}
+              style={{ width: '100%', height: 220, borderRadius: RADIUS.lg }}
+            />
+          )}
+        </View>
 
         {/* Actions */}
         <View
-          className="flex-row gap-2 pb-4 mb-4"
-          style={{ borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }}>
+          style={{
+            flexDirection: 'row',
+            gap: SPACING.sm,
+            marginBottom: SPACING.xl,
+          }}>
           <TouchableOpacity
             onPress={handleLike}
-            className="flex-row items-center gap-2 py-2 px-4"
             style={{
-              backgroundColor: liked ? '#fee2e2' : '#f1f5f9',
-              borderRadius: 12,
+              flex: 1,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: SPACING.xs,
+              paddingVertical: SPACING.sm,
+              backgroundColor: liked ? 'rgba(239,68,68,0.12)' : t.bg.elevated,
+              borderRadius: RADIUS.lg,
+              borderWidth: 1,
+              borderColor: liked ? t.danger : t.border.default,
             }}>
-            <Text>{liked ? '❤️' : '🤍'}</Text>
+            <Heart
+              size={16}
+              color={liked ? t.danger : t.text.secondary}
+              fill={liked ? t.danger : 'none'}
+            />
             <Text
-              style={{ color: liked ? '#ef4444' : '#64748b', fontWeight: '600', fontSize: 13 }}>
+              style={{
+                color: liked ? t.danger : t.text.secondary,
+                fontWeight: '700',
+                fontSize: FONT.sm,
+              }}>
               {post.likes.length} Me gusta
             </Text>
           </TouchableOpacity>
+
           <TouchableOpacity
-            className="flex-row items-center gap-2 py-2 px-4"
-            style={{ backgroundColor: '#f1f5f9', borderRadius: 12 }}>
-            <Text>⚠️</Text>
-            <Text style={{ color: '#64748b', fontWeight: '600', fontSize: 13 }}>Reportar</Text>
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: SPACING.xs,
+              paddingHorizontal: SPACING.lg,
+              paddingVertical: SPACING.sm,
+              backgroundColor: t.bg.elevated,
+              borderRadius: RADIUS.lg,
+              borderWidth: 1,
+              borderColor: t.border.default,
+            }}>
+            <Flag size={14} color={t.text.tertiary} />
+            <Text style={{ color: t.text.tertiary, fontWeight: '600', fontSize: FONT.sm }}>
+              Reportar
+            </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Comments */}
-        <Text className="text-foreground font-bold text-base mb-4">
-          Comentarios ({post.comments.length})
-        </Text>
+        {/* Comments header */}
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: SPACING.sm,
+            marginBottom: SPACING.md,
+          }}>
+          <MessageCircle size={16} color={t.text.secondary} />
+          <Text style={{ color: t.text.primary, fontWeight: '700', fontSize: FONT.base }}>
+            Comentarios ({post.comments.length})
+          </Text>
+        </View>
+
+        {post.comments.length === 0 && (
+          <View
+            style={{
+              alignItems: 'center',
+              paddingVertical: SPACING.xxl,
+              gap: SPACING.sm,
+            }}>
+            <MessageCircle size={32} color={t.text.tertiary} />
+            <Text style={{ color: t.text.tertiary, fontSize: FONT.sm }}>
+              Sé el primero en comentar
+            </Text>
+          </View>
+        )}
+
         {post.comments.map((c) => (
-          <View key={c.id} className="flex-row gap-3 mb-4">
+          <View
+            key={c.id}
+            style={{
+              flexDirection: 'row',
+              gap: SPACING.sm,
+              marginBottom: SPACING.md,
+            }}>
             <Image
               source={{ uri: c.author.avatar }}
-              style={{ width: 36, height: 36, borderRadius: 18 }}
+              style={{ width: 36, height: 36, borderRadius: RADIUS.full }}
             />
             <View
               style={{
                 flex: 1,
-                backgroundColor: '#f8fafc',
-                borderRadius: 14,
-                padding: 12,
+                backgroundColor: t.bg.card,
+                borderRadius: RADIUS.lg,
+                padding: SPACING.md,
+                borderWidth: 1,
+                borderColor: t.border.subtle,
               }}>
-              <View className="flex-row justify-between items-center mb-1">
-                <Text className="text-foreground font-semibold text-sm">{c.author.name}</Text>
-                <Text className="text-muted-foreground text-xs">{timeAgo(c.createdAt)}</Text>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: 4,
+                }}>
+                <Text
+                  style={{
+                    color: t.text.primary,
+                    fontWeight: '700',
+                    fontSize: FONT.sm,
+                  }}>
+                  {c.author.name}
+                </Text>
+                <Text style={{ color: t.text.tertiary, fontSize: FONT.xs }}>
+                  {timeAgo(c.createdAt)}
+                </Text>
               </View>
-              <Text className="text-foreground text-sm">{c.text}</Text>
+              <Text style={{ color: t.text.secondary, fontSize: FONT.sm, lineHeight: 18 }}>
+                {c.text}
+              </Text>
             </View>
           </View>
         ))}
+
         <View style={{ height: 20 }} />
       </ScrollView>
 
@@ -173,39 +326,51 @@ export default function PostDetailScreen() {
         style={{
           flexDirection: 'row',
           alignItems: 'center',
-          gap: 10,
-          padding: 16,
-          backgroundColor: '#fff',
+          gap: SPACING.sm,
+          padding: SPACING.md,
+          backgroundColor: t.bg.secondary,
           borderTopWidth: 1,
-          borderTopColor: '#f1f5f9',
+          borderTopColor: t.border.subtle,
         }}>
         <Image
           source={{ uri: user?.avatar }}
-          style={{ width: 36, height: 36, borderRadius: 18 }}
+          style={{ width: 34, height: 34, borderRadius: RADIUS.full }}
         />
         <TextInput
           value={comment}
           onChangeText={setComment}
           placeholder="Añade un comentario..."
-          className="flex-1 bg-secondary text-foreground px-4 py-3 rounded-2xl text-sm"
-          placeholderTextColor="#94a3b8"
+          onFocus={() => setCommentFocused(true)}
+          onBlur={() => setCommentFocused(false)}
+          style={{
+            flex: 1,
+            backgroundColor: t.bg.input,
+            color: t.text.primary,
+            paddingHorizontal: SPACING.md,
+            paddingVertical: SPACING.sm,
+            borderRadius: RADIUS.full,
+            fontSize: FONT.sm,
+            borderWidth: 1.5,
+            borderColor: commentFocused ? t.accent : t.border.default,
+          }}
+          placeholderTextColor={t.text.tertiary}
           multiline
         />
         <TouchableOpacity
           onPress={handleComment}
           disabled={submitting || !comment.trim()}
           style={{
-            backgroundColor: comment.trim() ? '#7c3aed' : '#e2e8f0',
-            borderRadius: 12,
-            paddingHorizontal: 16,
-            paddingVertical: 10,
+            width: 38,
+            height: 38,
+            borderRadius: RADIUS.full,
+            backgroundColor: comment.trim() ? t.accent : t.bg.elevated,
+            alignItems: 'center',
+            justifyContent: 'center',
           }}>
           {submitting ? (
-            <ActivityIndicator size="small" color="#fff" />
+            <ActivityIndicator size="small" color={t.accentText} />
           ) : (
-            <Text style={{ color: comment.trim() ? '#fff' : '#94a3b8', fontWeight: '600' }}>
-              Enviar
-            </Text>
+            <Send size={16} color={comment.trim() ? t.accentText : t.text.tertiary} />
           )}
         </TouchableOpacity>
       </View>

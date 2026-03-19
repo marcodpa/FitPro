@@ -85,6 +85,7 @@ export interface Conversation {
   participants: User[];
   lastMessage?: ChatMessage;
   updatedAt: string;
+  unreadCount?: number;
 }
 
 export interface Post {

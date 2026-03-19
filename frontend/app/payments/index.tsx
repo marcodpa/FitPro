@@ -9,15 +9,47 @@ import {
   TextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAppStore } from '@/lib/store';
+import { useAppStore, useTheme } from '@/lib/store';
 import { FakePaymentService } from '@/lib/services';
+import { FONT, RADIUS, SPACING } from '@/lib/theme';
 import type { Payment, Plan } from '@/lib/types';
+import {
+  ArrowLeft,
+  Clock,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  CreditCard,
+  Star,
+  Check,
+  ChevronRight,
+} from 'lucide-react-native';
 
 const STATUS_CONFIG = {
-  pending: { label: 'Pendiente', bg: '#fef3c7', color: '#d97706', icon: '⏳' },
-  validated: { label: 'Validado', bg: '#dcfce7', color: '#16a34a', icon: '✅' },
-  rejected: { label: 'Rechazado', bg: '#fee2e2', color: '#dc2626', icon: '❌' },
-  expired: { label: 'Vencido', bg: '#f1f5f9', color: '#64748b', icon: '⌛' },
+  pending: {
+    label: 'Pendiente',
+    icon: Clock,
+    color: '#f59e0b',
+    dim: 'rgba(245,158,11,0.15)',
+  },
+  validated: {
+    label: 'Validado',
+    icon: CheckCircle,
+    color: '#22c55e',
+    dim: 'rgba(34,197,94,0.15)',
+  },
+  rejected: {
+    label: 'Rechazado',
+    icon: XCircle,
+    color: '#ef4444',
+    dim: 'rgba(239,68,68,0.15)',
+  },
+  expired: {
+    label: 'Vencido',
+    icon: AlertCircle,
+    color: '#6b7280',
+    dim: 'rgba(107,114,128,0.15)',
+  },
 };
 
 export default function PaymentsScreen() {
@@ -27,8 +59,11 @@ export default function PaymentsScreen() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'history' | 'plans' | 'register'>('history');
   const [amount, setAmount] = useState('50');
+  const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [focusAmount, setFocusAmount] = useState(false);
   const router = useRouter();
+  const t = useTheme();
 
   useEffect(() => {
     if (!user) return;
@@ -69,144 +104,246 @@ export default function PaymentsScreen() {
     setPayments((prev) => prev.map((p) => (p.id === id ? updated : p)));
   };
 
+  const handleReject = (id: string) => {
+    Alert.alert('Rechazar Pago', '¿Estás seguro de rechazar este pago?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Rechazar',
+        style: 'destructive',
+        onPress: () => {
+          setPayments((prev) =>
+            prev.map((p) => (p.id === id ? { ...p, status: 'rejected' as const } : p))
+          );
+        },
+      },
+    ]);
+  };
+
+  const TABS = [
+    { key: 'history', label: 'Historial' },
+    { key: 'plans', label: 'Planes' },
+    { key: 'register', label: 'Registrar' },
+  ];
+
+  const METHODS = ['💵 Efectivo', '🏦 Transferencia', '💳 Tarjeta'];
+
   return (
-    <View className="flex-1 bg-background">
+    <View style={{ flex: 1, backgroundColor: t.bg.primary }}>
       {/* Header */}
       <View
         style={{
-          backgroundColor: '#7c3aed',
+          backgroundColor: t.bg.secondary,
           paddingTop: 56,
-          paddingBottom: 24,
-          paddingHorizontal: 24,
-          borderBottomLeftRadius: 28,
-          borderBottomRightRadius: 28,
+          paddingBottom: SPACING.lg,
+          paddingHorizontal: SPACING.xxl,
+          borderBottomWidth: 1,
+          borderBottomColor: t.border.subtle,
         }}>
-        <TouchableOpacity onPress={() => router.back()} className="mb-3">
-          <Text className="text-white/80">← Volver</Text>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, marginBottom: SPACING.md }}>
+          <ArrowLeft size={18} color={t.text.secondary} />
+          <Text style={{ color: t.text.secondary, fontSize: FONT.base }}>Volver</Text>
         </TouchableOpacity>
-        <Text className="text-white font-bold" style={{ fontSize: 26 }}>
-          Planes y Pagos 💳
-        </Text>
+
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginBottom: SPACING.md }}>
+          <CreditCard size={22} color={t.accent} />
+          <Text style={{ color: t.text.primary, fontWeight: '800', fontSize: FONT.xxl }}>
+            Planes y Pagos
+          </Text>
+        </View>
+
         {/* Tabs */}
-        <View className="flex-row gap-2 mt-4">
-          {[
-            { key: 'history', label: 'Historial' },
-            { key: 'plans', label: 'Planes' },
-            { key: 'register', label: 'Registrar' },
-          ].map((t) => (
-            <TouchableOpacity
-              key={t.key}
-              onPress={() => setTab(t.key as any)}
-              style={{
-                paddingHorizontal: 16,
-                paddingVertical: 8,
-                borderRadius: 20,
-                backgroundColor:
-                  tab === t.key ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.2)',
-              }}>
-              <Text
+        <View style={{ flexDirection: 'row', gap: SPACING.sm }}>
+          {TABS.map((tabItem) => {
+            const isActive = tab === tabItem.key;
+            return (
+              <TouchableOpacity
+                key={tabItem.key}
+                onPress={() => setTab(tabItem.key as any)}
                 style={{
-                  color: tab === t.key ? '#7c3aed' : '#fff',
-                  fontWeight: '600',
-                  fontSize: 13,
+                  paddingHorizontal: SPACING.md,
+                  paddingVertical: SPACING.sm - 2,
+                  borderRadius: RADIUS.full,
+                  backgroundColor: isActive ? t.accent : t.bg.elevated,
+                  borderWidth: 1,
+                  borderColor: isActive ? t.accent : t.border.default,
                 }}>
-                {t.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <Text
+                  style={{
+                    color: isActive ? t.accentText : t.text.secondary,
+                    fontWeight: '700',
+                    fontSize: FONT.sm,
+                  }}>
+                  {tabItem.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
 
       {loading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#7c3aed" />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator size="large" color={t.accent} />
         </View>
       ) : (
-        <ScrollView className="flex-1" contentContainerStyle={{ padding: 20 }}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: SPACING.xl }}>
+          {/* ─── HISTORY ─── */}
           {tab === 'history' && (
             <>
-              <Text className="text-foreground font-bold text-base mb-4">
+              <Text
+                style={{
+                  color: t.text.secondary,
+                  fontWeight: '700',
+                  fontSize: FONT.sm,
+                  letterSpacing: 0.5,
+                  textTransform: 'uppercase',
+                  marginBottom: SPACING.md,
+                }}>
                 {activeRole === 'admin' ? 'Todos los pagos' : 'Mis Pagos'}
               </Text>
+
               {payments.length === 0 ? (
-                <View className="items-center mt-10">
-                  <Text style={{ fontSize: 48, marginBottom: 12 }}>💳</Text>
-                  <Text className="text-foreground font-bold text-lg">Sin pagos</Text>
+                <View style={{ alignItems: 'center', marginTop: 60, gap: SPACING.md }}>
+                  <View
+                    style={{
+                      width: 72,
+                      height: 72,
+                      borderRadius: RADIUS.full,
+                      backgroundColor: t.bg.elevated,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                    <CreditCard size={32} color={t.text.tertiary} />
+                  </View>
+                  <Text style={{ color: t.text.primary, fontWeight: '700', fontSize: FONT.lg }}>
+                    Sin pagos
+                  </Text>
+                  <Text style={{ color: t.text.tertiary, fontSize: FONT.base, textAlign: 'center' }}>
+                    Aún no tienes historial de pagos
+                  </Text>
                 </View>
               ) : (
                 payments.map((p) => {
-                  const s = STATUS_CONFIG[p.status];
+                  const cfg = STATUS_CONFIG[p.status];
+                  const StatusIcon = cfg.icon;
                   return (
                     <View
                       key={p.id}
                       style={{
-                        backgroundColor: '#fff',
-                        borderRadius: 16,
-                        padding: 16,
-                        marginBottom: 12,
+                        backgroundColor: t.bg.card,
+                        borderRadius: RADIUS.xl,
+                        padding: SPACING.lg,
+                        marginBottom: SPACING.sm,
                         borderWidth: 1,
-                        borderColor: '#f1f5f9',
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.05,
-                        shadowRadius: 6,
-                        elevation: 2,
+                        borderColor: t.border.subtle,
                       }}>
-                      <View className="flex-row justify-between items-start mb-2">
-                        <View>
-                          <Text className="text-foreground font-bold text-base">{p.plan}</Text>
-                          <Text className="text-muted-foreground text-xs mt-0.5">
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          justifyContent: 'space-between',
+                          alignItems: 'flex-start',
+                          marginBottom: SPACING.sm,
+                        }}>
+                        <View style={{ flex: 1 }}>
+                          <Text
+                            style={{
+                              color: t.text.primary,
+                              fontWeight: '700',
+                              fontSize: FONT.base,
+                            }}>
+                            {p.plan}
+                          </Text>
+                          <Text
+                            style={{
+                              color: t.accent,
+                              fontWeight: '800',
+                              fontSize: FONT.lg,
+                              marginTop: 2,
+                            }}>
                             ${p.amount} {p.currency}
                           </Text>
                         </View>
                         <View
                           style={{
-                            backgroundColor: s.bg,
-                            borderRadius: 10,
-                            paddingHorizontal: 10,
-                            paddingVertical: 5,
                             flexDirection: 'row',
                             alignItems: 'center',
                             gap: 4,
+                            backgroundColor: cfg.dim,
+                            borderRadius: RADIUS.full,
+                            paddingHorizontal: SPACING.sm,
+                            paddingVertical: 4,
                           }}>
-                          <Text style={{ fontSize: 12 }}>{s.icon}</Text>
-                          <Text style={{ color: s.color, fontSize: 11, fontWeight: '700' }}>
-                            {s.label}
+                          <StatusIcon size={12} color={cfg.color} />
+                          <Text
+                            style={{
+                              color: cfg.color,
+                              fontSize: FONT.xs,
+                              fontWeight: '700',
+                            }}>
+                            {cfg.label}
                           </Text>
                         </View>
                       </View>
-                      <View className="flex-row gap-4">
-                        <Text className="text-muted-foreground text-xs">
-                          📅 Fecha: {p.date}
+
+                      <View style={{ flexDirection: 'row', gap: SPACING.md }}>
+                        <Text style={{ color: t.text.tertiary, fontSize: FONT.xs }}>
+                          📅 {p.date}
                         </Text>
-                        <Text className="text-muted-foreground text-xs">
+                        <Text style={{ color: t.text.tertiary, fontSize: FONT.xs }}>
                           ⏰ Vence: {p.dueDate}
                         </Text>
                       </View>
+
                       {activeRole === 'admin' && p.status === 'pending' && (
-                        <View className="flex-row gap-2 mt-3">
+                        <View
+                          style={{ flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.md }}>
                           <TouchableOpacity
                             onPress={() => handleValidate(p.id)}
                             style={{
                               flex: 1,
-                              backgroundColor: '#0d9e6e',
-                              borderRadius: 10,
-                              paddingVertical: 10,
+                              flexDirection: 'row',
                               alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: 6,
+                              backgroundColor: t.successDim,
+                              borderRadius: RADIUS.md,
+                              paddingVertical: SPACING.sm,
+                              borderWidth: 1,
+                              borderColor: t.success,
                             }}>
-                            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>
+                            <CheckCircle size={14} color={t.success} />
+                            <Text
+                              style={{
+                                color: t.success,
+                                fontWeight: '700',
+                                fontSize: FONT.sm,
+                              }}>
                               Validar
                             </Text>
                           </TouchableOpacity>
                           <TouchableOpacity
+                            onPress={() => handleReject(p.id)}
                             style={{
                               flex: 1,
-                              backgroundColor: '#fee2e2',
-                              borderRadius: 10,
-                              paddingVertical: 10,
+                              flexDirection: 'row',
                               alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: 6,
+                              backgroundColor: t.dangerDim,
+                              borderRadius: RADIUS.md,
+                              paddingVertical: SPACING.sm,
+                              borderWidth: 1,
+                              borderColor: t.danger,
                             }}>
-                            <Text style={{ color: '#dc2626', fontWeight: '600', fontSize: 13 }}>
+                            <XCircle size={14} color={t.danger} />
+                            <Text
+                              style={{
+                                color: t.danger,
+                                fontWeight: '700',
+                                fontSize: FONT.sm,
+                              }}>
                               Rechazar
                             </Text>
                           </TouchableOpacity>
@@ -219,136 +356,302 @@ export default function PaymentsScreen() {
             </>
           )}
 
+          {/* ─── PLANS ─── */}
           {tab === 'plans' && (
             <>
-              <Text className="text-foreground font-bold text-base mb-4">Planes Disponibles</Text>
-              {plans.map((plan) => (
-                <View
-                  key={plan.id}
-                  style={{
-                    backgroundColor: plan.isActive ? '#7c3aed' : '#fff',
-                    borderRadius: 20,
-                    padding: 20,
-                    marginBottom: 14,
-                    borderWidth: plan.isActive ? 0 : 1,
-                    borderColor: '#f1f5f9',
-                    shadowColor: plan.isActive ? '#7c3aed' : '#000',
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: plan.isActive ? 0.3 : 0.06,
-                    shadowRadius: 12,
-                    elevation: plan.isActive ? 8 : 3,
-                  }}>
-                  {plan.isActive && (
-                    <View
+              <Text
+                style={{
+                  color: t.text.secondary,
+                  fontWeight: '700',
+                  fontSize: FONT.sm,
+                  letterSpacing: 0.5,
+                  textTransform: 'uppercase',
+                  marginBottom: SPACING.md,
+                }}>
+                Planes Disponibles
+              </Text>
+
+              {plans.map((plan) => {
+                const isActive = plan.isActive;
+                return (
+                  <View
+                    key={plan.id}
+                    style={{
+                      backgroundColor: isActive ? t.accent : t.bg.card,
+                      borderRadius: RADIUS.xxl,
+                      padding: SPACING.xl,
+                      marginBottom: SPACING.md,
+                      borderWidth: 1,
+                      borderColor: isActive ? t.accent : t.border.default,
+                    }}>
+                    {isActive && (
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 4,
+                          backgroundColor: 'rgba(0,0,0,0.15)',
+                          borderRadius: RADIUS.full,
+                          paddingHorizontal: SPACING.sm,
+                          paddingVertical: 4,
+                          alignSelf: 'flex-start',
+                          marginBottom: SPACING.sm,
+                        }}>
+                        <Star size={10} color={t.accentText} fill={t.accentText} />
+                        <Text
+                          style={{
+                            color: t.accentText,
+                            fontSize: FONT.xs,
+                            fontWeight: '800',
+                            letterSpacing: 1,
+                          }}>
+                          PLAN ACTUAL
+                        </Text>
+                      </View>
+                    )}
+
+                    <Text
                       style={{
-                        backgroundColor: 'rgba(255,255,255,0.25)',
-                        borderRadius: 8,
-                        paddingHorizontal: 10,
-                        paddingVertical: 4,
-                        alignSelf: 'flex-start',
-                        marginBottom: 10,
+                        color: isActive ? t.accentText : t.text.primary,
+                        fontWeight: '800',
+                        fontSize: FONT.xl,
+                        marginBottom: 4,
                       }}>
-                      <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>
-                        PLAN ACTUAL
-                      </Text>
-                    </View>
-                  )}
-                  <Text
-                    style={{
-                      color: plan.isActive ? '#fff' : '#1e293b',
-                      fontWeight: '700',
-                      fontSize: 20,
-                      marginBottom: 4,
-                    }}>
-                    {plan.name}
-                  </Text>
-                  <Text
-                    style={{
-                      color: plan.isActive ? 'rgba(255,255,255,0.8)' : '#64748b',
-                      fontSize: 13,
-                      marginBottom: 12,
-                    }}>
-                    ${plan.price}/{plan.period === 'monthly' ? 'mes' : plan.period === 'annual' ? 'año' : 'trimestre'}
-                  </Text>
-                  {plan.features.map((f, i) => (
-                    <View key={i} className="flex-row items-start gap-2 mb-1.5">
-                      <Text
+                      {plan.name}
+                    </Text>
+                    <Text
+                      style={{
+                        color: isActive ? 'rgba(10,10,10,0.6)' : t.text.tertiary,
+                        fontSize: FONT.base,
+                        marginBottom: SPACING.md,
+                      }}>
+                      ${plan.price}/
+                      {plan.period === 'monthly'
+                        ? 'mes'
+                        : plan.period === 'annual'
+                          ? 'año'
+                          : 'trimestre'}
+                    </Text>
+
+                    {plan.features.map((f, i) => (
+                      <View
+                        key={i}
                         style={{
-                          color: plan.isActive ? '#a7f3d0' : '#0d9e6e',
-                          fontSize: 14,
+                          flexDirection: 'row',
+                          alignItems: 'flex-start',
+                          gap: SPACING.sm,
+                          marginBottom: SPACING.xs,
                         }}>
-                        ✓
-                      </Text>
-                      <Text
+                        <View
+                          style={{
+                            width: 18,
+                            height: 18,
+                            borderRadius: RADIUS.full,
+                            backgroundColor: isActive
+                              ? 'rgba(0,0,0,0.15)'
+                              : t.accentDim,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginTop: 1,
+                          }}>
+                          <Check
+                            size={10}
+                            color={isActive ? t.accentText : t.accent}
+                            strokeWidth={3}
+                          />
+                        </View>
+                        <Text
+                          style={{
+                            color: isActive ? 'rgba(10,10,10,0.8)' : t.text.secondary,
+                            fontSize: FONT.sm,
+                            lineHeight: 18,
+                            flex: 1,
+                          }}>
+                          {f}
+                        </Text>
+                      </View>
+                    ))}
+
+                    {!isActive && (
+                      <TouchableOpacity
+                        onPress={() => setTab('register')}
                         style={{
-                          color: plan.isActive ? 'rgba(255,255,255,0.9)' : '#475569',
-                          fontSize: 13,
-                          lineHeight: 18,
-                          flex: 1,
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 6,
+                          backgroundColor: t.accentDim,
+                          borderRadius: RADIUS.md,
+                          paddingVertical: SPACING.sm,
+                          marginTop: SPACING.md,
+                          borderWidth: 1,
+                          borderColor: t.accent,
                         }}>
-                        {f}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              ))}
+                        <Text style={{ color: t.accent, fontWeight: '700', fontSize: FONT.sm }}>
+                          Contratar plan
+                        </Text>
+                        <ChevronRight size={14} color={t.accent} />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                );
+              })}
             </>
           )}
 
+          {/* ─── REGISTER ─── */}
           {tab === 'register' && (
             <>
-              <Text className="text-foreground font-bold text-base mb-6">Registrar Pago</Text>
-              <View style={{ backgroundColor: '#fff', borderRadius: 20, padding: 20, borderWidth: 1, borderColor: '#f1f5f9' }}>
-                <Text className="text-muted-foreground text-sm mb-2 font-medium">Plan</Text>
-                <View className="bg-secondary px-4 py-4 rounded-2xl mb-4">
-                  <Text className="text-foreground">Plan Premium - Mensual</Text>
+              <Text
+                style={{
+                  color: t.text.secondary,
+                  fontWeight: '700',
+                  fontSize: FONT.sm,
+                  letterSpacing: 0.5,
+                  textTransform: 'uppercase',
+                  marginBottom: SPACING.md,
+                }}>
+                Registrar Pago
+              </Text>
+
+              <View
+                style={{
+                  backgroundColor: t.bg.card,
+                  borderRadius: RADIUS.xxl,
+                  padding: SPACING.xl,
+                  borderWidth: 1,
+                  borderColor: t.border.default,
+                  gap: SPACING.md,
+                }}>
+                {/* Plan */}
+                <View>
+                  <Text
+                    style={{
+                      color: t.text.secondary,
+                      fontSize: FONT.sm,
+                      fontWeight: '600',
+                      marginBottom: SPACING.xs,
+                    }}>
+                    Plan
+                  </Text>
+                  <View
+                    style={{
+                      backgroundColor: t.bg.elevated,
+                      paddingHorizontal: SPACING.lg,
+                      paddingVertical: SPACING.md,
+                      borderRadius: RADIUS.lg,
+                      borderWidth: 1,
+                      borderColor: t.border.subtle,
+                    }}>
+                    <Text style={{ color: t.text.primary, fontSize: FONT.base }}>
+                      Plan Premium - Mensual
+                    </Text>
+                  </View>
                 </View>
 
-                <Text className="text-muted-foreground text-sm mb-2 font-medium">Monto (USD)</Text>
-                <TextInput
-                  value={amount}
-                  onChangeText={setAmount}
-                  keyboardType="decimal-pad"
-                  className="bg-secondary text-foreground px-4 py-4 rounded-2xl mb-4 text-base"
-                  placeholderTextColor="#9ca3af"
-                />
-
-                <Text className="text-muted-foreground text-sm mb-2 font-medium">Método de pago</Text>
-                <View className="flex-row gap-2 mb-6">
-                  {['💵 Efectivo', '🏦 Transferencia', '💳 Tarjeta'].map((m) => (
-                    <TouchableOpacity
-                      key={m}
-                      style={{
-                        flex: 1,
-                        backgroundColor: '#f8fafc',
-                        borderRadius: 12,
-                        paddingVertical: 12,
-                        alignItems: 'center',
-                        borderWidth: 1,
-                        borderColor: '#e2e8f0',
-                      }}>
-                      <Text style={{ fontSize: 11, color: '#475569', fontWeight: '600', textAlign: 'center' }}>{m}</Text>
-                    </TouchableOpacity>
-                  ))}
+                {/* Amount */}
+                <View>
+                  <Text
+                    style={{
+                      color: t.text.secondary,
+                      fontSize: FONT.sm,
+                      fontWeight: '600',
+                      marginBottom: SPACING.xs,
+                    }}>
+                    Monto (USD)
+                  </Text>
+                  <TextInput
+                    value={amount}
+                    onChangeText={setAmount}
+                    keyboardType="decimal-pad"
+                    onFocus={() => setFocusAmount(true)}
+                    onBlur={() => setFocusAmount(false)}
+                    style={{
+                      backgroundColor: t.bg.input,
+                      color: t.text.primary,
+                      paddingHorizontal: SPACING.lg,
+                      paddingVertical: SPACING.md,
+                      borderRadius: RADIUS.lg,
+                      fontSize: FONT.base,
+                      borderWidth: 1.5,
+                      borderColor: focusAmount ? t.accent : t.border.default,
+                    }}
+                    placeholderTextColor={t.text.tertiary}
+                  />
                 </View>
 
+                {/* Payment method */}
+                <View>
+                  <Text
+                    style={{
+                      color: t.text.secondary,
+                      fontSize: FONT.sm,
+                      fontWeight: '600',
+                      marginBottom: SPACING.xs,
+                    }}>
+                    Método de pago
+                  </Text>
+                  <View style={{ flexDirection: 'row', gap: SPACING.sm }}>
+                    {METHODS.map((m) => {
+                      const isSelected = selectedMethod === m;
+                      return (
+                        <TouchableOpacity
+                          key={m}
+                          onPress={() => setSelectedMethod(isSelected ? null : m)}
+                          style={{
+                            flex: 1,
+                            backgroundColor: isSelected ? t.accentDim : t.bg.elevated,
+                            borderRadius: RADIUS.md,
+                            paddingVertical: SPACING.sm,
+                            alignItems: 'center',
+                            borderWidth: 1.5,
+                            borderColor: isSelected ? t.accent : t.border.default,
+                          }}>
+                          <Text
+                            style={{
+                              fontSize: FONT.xs,
+                              color: isSelected ? t.accent : t.text.secondary,
+                              fontWeight: '600',
+                              textAlign: 'center',
+                            }}>
+                            {m}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+
+                {/* Submit */}
                 <TouchableOpacity
                   onPress={handleSubmitPayment}
                   disabled={submitting}
                   style={{
-                    backgroundColor: '#7c3aed',
-                    borderRadius: 16,
-                    paddingVertical: 18,
+                    backgroundColor: t.accent,
+                    borderRadius: RADIUS.xl,
+                    paddingVertical: SPACING.lg,
                     alignItems: 'center',
+                    marginTop: SPACING.xs,
+                    opacity: submitting ? 0.7 : 1,
                   }}>
-                  <Text className="text-white font-bold text-base">
-                    {submitting ? 'Enviando...' : 'Registrar Pago'}
-                  </Text>
+                  {submitting ? (
+                    <ActivityIndicator color={t.accentText} />
+                  ) : (
+                    <Text
+                      style={{
+                        color: t.accentText,
+                        fontWeight: '800',
+                        fontSize: FONT.base + 1,
+                      }}>
+                      Registrar Pago
+                    </Text>
+                  )}
                 </TouchableOpacity>
               </View>
             </>
           )}
-          <View style={{ height: 24 }} />
+
+          <View style={{ height: 40 }} />
         </ScrollView>
       )}
     </View>

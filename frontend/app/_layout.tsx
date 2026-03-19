@@ -12,7 +12,7 @@ import VoiceCommandOverlay from '@/components/VoiceCommandOverlay';
 
 // ─── Navigation guard ──────────────────────────────────────────────────────────
 function NavigationGuard() {
-  const { isAuthenticated, isOnboarded } = useAppStore();
+  const { isAuthenticated, isOnboarded, isHydrated } = useAppStore();
   const segments = useSegments();
   const router = useRouter();
   const [ready, setReady] = useState(false);
@@ -23,7 +23,7 @@ function NavigationGuard() {
   }, []);
 
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || !isHydrated) return;
     const inAuthGroup = segments[0] === 'auth';
     const atRoot = (segments as string[]).length === 0;
 
@@ -39,7 +39,7 @@ function NavigationGuard() {
       router.replace('/(tabs)');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, isAuthenticated, isOnboarded, segments[0]]);
+  }, [ready, isHydrated, isAuthenticated, isOnboarded, segments[0]]);
 
   return null;
 }
