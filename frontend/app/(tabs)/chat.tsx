@@ -1,18 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  ActivityIndicator,
+  View, Text, ScrollView, TouchableOpacity,
+  Image, ActivityIndicator, StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppStore, useTheme } from '@/lib/store';
 import { FakeChatService } from '@/lib/services';
 import type { Conversation } from '@/lib/types';
-import { MessageSquare, Dumbbell, User, ChevronRight } from 'lucide-react-native';
 import { FONT, RADIUS, SPACING } from '@/lib/theme';
+import { MessageSquare, Dumbbell, User, ChevronRight, Edit2, CheckCheck } from 'lucide-react-native';
 
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -21,15 +17,17 @@ function timeAgo(iso: string) {
   if (mins < 60) return `${mins}m`;
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `${hrs}h`;
-  return `${Math.floor(hrs / 24)}d`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d`;
+  return new Date(iso).toLocaleDateString('es', { day: 'numeric', month: 'short' });
 }
 
 export default function ChatTab() {
   const { user } = useAppStore();
   const t = useTheme();
+  const router = useRouter();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
     if (!user) return;
@@ -41,40 +39,28 @@ export default function ChatTab() {
   const getOther = (conv: Conversation) =>
     conv.participants.find((p) => p.id !== user?.id);
 
+  const unreadTotal = conversations.filter((c: any) => c.unreadCount && c.unreadCount > 0).length;
+
   return (
     <View style={{ flex: 1, backgroundColor: t.bg.primary }}>
-      {/* Header */}
-      <View
-        style={{
-          backgroundColor: t.bg.secondary,
-          paddingTop: 56,
-          paddingBottom: SPACING.xxl,
-          paddingHorizontal: SPACING.xxl,
-          borderBottomWidth: 1,
-          borderBottomColor: t.border.subtle,
-        }}>
-        <Text style={{ color: t.text.secondary, fontSize: FONT.xs, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 }}>
-          FitPro
-        </Text>
-        <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-          <Text style={{ color: t.text.primary, fontSize: FONT.xxxl, fontWeight: '800', letterSpacing: -0.5 }}>
-            Mensajes
-          </Text>
-          {conversations.length > 0 && (
-            <View
-              style={{
-                backgroundColor: t.accentDim,
-                borderRadius: RADIUS.full,
-                paddingHorizontal: SPACING.md,
-                paddingVertical: 4,
-                borderWidth: 1,
-                borderColor: t.accent,
-              }}>
-              <Text style={{ color: t.text.accent, fontSize: FONT.xs, fontWeight: '700' }}>
-                {conversations.length} activos
-              </Text>
+      <StatusBar barStyle={t.isDark ? 'light-content' : 'dark-content'} />
+
+      <View style={{ backgroundColor: t.bg.primary, paddingTop: 60, paddingBottom: SPACING.lg, paddingHorizontal: SPACING.xxl, borderBottomWidth: 1, borderBottomColor: t.border.subtle }}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <View style={{ gap: 4 }}>
+            <Text style={{ color: t.text.secondary, fontSize: FONT.sm, fontWeight: '500' }}>Comunícate</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <Text style={{ color: t.text.primary, fontSize: 30, fontWeight: '800', letterSpacing: -1 }}>Mensajes</Text>
+              {unreadTotal > 0 && (
+                <View style={{ backgroundColor: t.accent, borderRadius: RADIUS.full, minWidth: 22, height: 22, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 }}>
+                  <Text style={{ color: t.accentText, fontSize: 11, fontWeight: '800' }}>{unreadTotal}</Text>
+                </View>
+              )}
             </View>
-          )}
+          </View>
+          <TouchableOpacity activeOpacity={0.8} style={{ marginTop: 6, width: 40, height: 40, borderRadius: RADIUS.md, backgroundColor: t.accentDim, borderWidth: 1, borderColor: t.accent + '40', alignItems: 'center', justifyContent: 'center' }}>
+            <Edit2 size={16} color={t.accent} strokeWidth={2.2} />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -83,114 +69,74 @@ export default function ChatTab() {
           <ActivityIndicator size="large" color={t.accent} />
         </View>
       ) : conversations.length === 0 ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40 }}>
-          <View
-            style={{
-              width: 72,
-              height: 72,
-              borderRadius: RADIUS.xl,
-              backgroundColor: t.bg.tertiary,
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: SPACING.lg,
-              borderWidth: 1,
-              borderColor: t.border.default,
-            }}>
-            <MessageSquare size={32} color={t.text.tertiary} />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40, gap: 16 }}>
+          <View style={{ width: 80, height: 80, borderRadius: RADIUS.xl, backgroundColor: t.bg.card, borderWidth: 1, borderStyle: 'dashed', borderColor: t.border.strong, alignItems: 'center', justifyContent: 'center' }}>
+            <MessageSquare size={32} color={t.text.tertiary} strokeWidth={1.5} />
           </View>
-          <Text style={{ color: t.text.primary, fontWeight: '700', fontSize: FONT.xl, textAlign: 'center', marginBottom: 8 }}>
-            Sin mensajes
-          </Text>
-          <Text style={{ color: t.text.secondary, textAlign: 'center', fontSize: FONT.base, lineHeight: 22 }}>
-            Cuando tengas un entrenador asignado, podras chatear aqui.
-          </Text>
+          <View style={{ alignItems: 'center', gap: 6 }}>
+            <Text style={{ color: t.text.primary, fontWeight: '800', fontSize: FONT.xl }}>Sin conversaciones</Text>
+            <Text style={{ color: t.text.secondary, textAlign: 'center', fontSize: FONT.sm, lineHeight: 22 }}>
+              Cuando tengas un entrenador asignado podrás chatear aquí.
+            </Text>
+          </View>
         </View>
       ) : (
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ paddingTop: SPACING.md, paddingBottom: 32 }}
-          showsVerticalScrollIndicator={false}>
-          {conversations.map((conv, i) => {
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: SPACING.md, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
+          {conversations.map((conv: Conversation, i: number) => {
             const other = getOther(conv);
             if (!other) return null;
             const isTrainer = other.role === 'trainer';
-            const lastMsg = conv.lastMessage;
+            const isAdmin   = other.role === 'admin';
+            const lastMsg   = conv.lastMessage;
             const isRoutineMsg = lastMsg?.type === 'routine';
+            const hasUnread = ((conv as any).unreadCount ?? 0) > 0;
+            const roleColor = isTrainer ? t.accent : isAdmin ? t.orange : t.info;
+            const roleDim   = isTrainer ? t.accentDim : isAdmin ? t.warningDim : t.infoDim;
+            const roleLabel = isTrainer ? 'Entrenador' : isAdmin ? 'Admin' : 'Atleta';
+            const RoleIcon  = isTrainer ? Dumbbell : User;
 
             return (
               <TouchableOpacity
                 key={conv.id}
                 onPress={() => router.push(`/chat/${conv.id}` as any)}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: SPACING.lg,
-                  paddingHorizontal: SPACING.xxl,
-                  paddingVertical: SPACING.lg,
-                  backgroundColor: 'transparent',
-                  borderBottomWidth: i < conversations.length - 1 ? 1 : 0,
-                  borderBottomColor: t.border.subtle,
-                }}>
+                activeOpacity={0.75}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.lg, paddingHorizontal: SPACING.xxl, paddingVertical: 14, backgroundColor: hasUnread ? t.accentDim + '60' : 'transparent', borderBottomWidth: 1, borderBottomColor: t.border.subtle }}>
+
                 {/* Avatar */}
                 <View style={{ position: 'relative' }}>
-                  <Image
-                    source={{ uri: other.avatar }}
-                    style={{
-                      width: 54,
-                      height: 54,
-                      borderRadius: 27,
-                      backgroundColor: t.bg.tertiary,
-                      borderWidth: 2,
-                      borderColor: isTrainer ? t.accentDim : t.border.subtle,
-                    }}
-                  />
-                  {/* Online dot */}
-                  <View
-                    style={{
-                      position: 'absolute',
-                      bottom: 1,
-                      right: 1,
-                      width: 13,
-                      height: 13,
-                      borderRadius: 7,
-                      backgroundColor: t.success,
-                      borderWidth: 2,
-                      borderColor: t.bg.primary,
-                    }}
-                  />
+                  <View style={{ width: 56, height: 56, borderRadius: 28, borderWidth: 2.5, borderColor: isTrainer ? t.accent + '60' : t.border.default, padding: 2 }}>
+                    <Image source={{ uri: other.avatar }} style={{ width: '100%', height: '100%', borderRadius: 26, backgroundColor: t.bg.tertiary }} />
+                  </View>
+                  <View style={{ position: 'absolute', bottom: 1, right: 1, width: 14, height: 14, borderRadius: 7, backgroundColor: t.success, borderWidth: 2.5, borderColor: t.bg.primary }} />
                 </View>
 
-                {/* Info */}
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
-                    <Text style={{ color: t.text.primary, fontWeight: '700', fontSize: FONT.md }}>
-                      {other.name}
-                    </Text>
-                    <Text style={{ color: t.text.tertiary, fontSize: FONT.xs }}>
-                      {timeAgo(conv.updatedAt)}
+                {/* Body */}
+                <View style={{ flex: 1, gap: 3 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={{ color: t.text.primary, fontWeight: hasUnread ? '800' : '700', fontSize: FONT.md, letterSpacing: -0.2 }}>{other.name}</Text>
+                    <Text style={{ color: hasUnread ? t.accent : t.text.tertiary, fontSize: 11, fontWeight: hasUnread ? '700' : '400' }}>{timeAgo(conv.updatedAt)}</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: roleDim, borderRadius: RADIUS.sm, paddingHorizontal: 7, paddingVertical: 2, borderWidth: 1, borderColor: roleColor + '30' }}>
+                      <RoleIcon size={9} color={roleColor} strokeWidth={2.5} />
+                      <Text style={{ color: roleColor, fontSize: 10, fontWeight: '700' }}>{roleLabel}</Text>
+                    </View>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    {lastMsg && !isRoutineMsg && <CheckCheck size={13} color={t.text.tertiary} strokeWidth={2} />}
+                    <Text numberOfLines={1} style={{ flex: 1, color: hasUnread ? t.text.primary : t.text.secondary, fontSize: FONT.sm, fontWeight: hasUnread ? '600' : '400' }}>
+                      {isRoutineMsg ? '📋 Compartió una rutina' : (lastMsg?.text ?? 'Sin mensajes')}
                     </Text>
                   </View>
-
-                  {/* Role badge */}
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 }}>
-                    {isTrainer ? (
-                      <Dumbbell size={10} color={t.text.accent} />
-                    ) : (
-                      <User size={10} color={t.text.tertiary} />
-                    )}
-                    <Text style={{ color: isTrainer ? t.text.accent : t.text.tertiary, fontSize: 10, fontWeight: '600' }}>
-                      {isTrainer ? 'Entrenador' : 'Atleta'}
-                    </Text>
-                  </View>
-
-                  <Text
-                    numberOfLines={1}
-                    style={{ color: t.text.secondary, fontSize: FONT.sm }}>
-                    {isRoutineMsg ? 'Compartio una rutina' : (lastMsg?.text ?? '...')}
-                  </Text>
                 </View>
 
-                <ChevronRight size={16} color={t.text.tertiary} />
+                {hasUnread ? (
+                  <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: t.accent, alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ color: t.accentText, fontSize: 11, fontWeight: '800' }}>{(conv as any).unreadCount}</Text>
+                  </View>
+                ) : (
+                  <ChevronRight size={16} color={t.text.tertiary} strokeWidth={2} />
+                )}
               </TouchableOpacity>
             );
           })}
