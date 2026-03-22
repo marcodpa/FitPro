@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppStore, useTheme } from '@/lib/store';
-import { FakeUserService } from '@/lib/services';
+import { UserService } from '@/lib/services';
 import { FONT, RADIUS, SPACING } from '@/lib/theme';
 import {
   ArrowLeft,
@@ -60,7 +60,7 @@ export default function EditProfileScreen() {
     }
     setLoading(true);
     try {
-      const updated = await FakeUserService.updateProfile(user?.id ?? '', {
+      const updated = await UserService.updateProfile(user?.id ?? '', {
         name: name.trim(),
         bio: bio.trim(),
         weight: Number(weight) || 70,
