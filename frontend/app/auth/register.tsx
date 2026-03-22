@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppStore, useTheme } from '@/lib/store';
-import { FakeAuthService } from '@/lib/services';
+import { AuthService } from '@/lib/services';
 import { FONT, RADIUS, SPACING } from '@/lib/theme';
 import type { UserRole } from '@/lib/types';
 import { User, PersonStanding, Dumbbell, ArrowLeft } from 'lucide-react-native';
@@ -45,7 +45,7 @@ export default function RegisterScreen() {
     }
     setLoading(true);
     try {
-      const { user, token } = await FakeAuthService.register({ name, email, password, role });
+      const { user, token } = await AuthService.register(name, email, password, role);
       login(user, token);
       router.replace('/(tabs)');
     } catch (e: any) {

@@ -28,7 +28,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     email     = models.EmailField(unique=True)
     name      = models.CharField(max_length=150)
     role      = models.CharField(max_length=10, choices=ROLES, default='client')
-    avatar    = models.ImageField(upload_to='avatars/', null=True, blank=True)
+    avatar    = models.URLField(max_length=500, blank=True, default='')
     bio       = models.TextField(blank=True)
     weight    = models.FloatField(null=True, blank=True, help_text='kg')
     height    = models.FloatField(null=True, blank=True, help_text='cm')
