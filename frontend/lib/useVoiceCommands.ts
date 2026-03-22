@@ -54,6 +54,8 @@ export interface UseVoiceCommandsOptions {
   onCommand: (action: string, label: string) => void;
   onTranscript?: (text: string, interim: boolean) => void;
   onWakeWord?: () => void;
+  /** Additional context-specific commands merged with global COMMANDS */
+  extraCommands?: Array<{ pattern: RegExp; action: string; label?: string }>;
 }
 
 export interface UseVoiceCommandsReturn {
@@ -145,6 +147,7 @@ export function useVoiceCommands({
   onCommand,
   onTranscript,
   onWakeWord,
+  extraCommands = [],
 }: UseVoiceCommandsOptions): UseVoiceCommandsReturn {
   const isSupported =
     typeof window !== 'undefined' &&
@@ -203,12 +206,25 @@ export function useVoiceCommands({
       if (isFinal) {
         setStatus('processing');
         let matched = false;
-        for (const cmd of COMMANDS) {
+        // Check extra (context-specific) commands first
+        for (const cmd of extraCommands) {
           if (cmd.pattern.test(text)) {
-            setLastCommand(cmd.label);
-            onCommand(cmd.action, cmd.label);
+            const label = cmd.label ?? cmd.action;
+            setLastCommand(label);
+            onCommand(cmd.action, label);
             matched = true;
             break;
+          }
+        }
+        // Then global commands
+        if (!matched) {
+          for (const cmd of COMMANDS) {
+            if (cmd.pattern.test(text)) {
+              setLastCommand(cmd.label);
+              onCommand(cmd.action, cmd.label);
+              matched = true;
+              break;
+            }
           }
         }
         if (!matched) setLastCommand(null);

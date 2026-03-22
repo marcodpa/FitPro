@@ -10,9 +10,9 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppStore, useTheme } from '@/lib/store';
-import { FakeWorkoutService, FakeUserService, FakePaymentService } from '@/lib/services';
+import { WorkoutService, CalendarService } from '@/lib/services';
 import { FONT, RADIUS, SPACING } from '@/lib/theme';
-import type { WorkoutSession, User, Payment } from '@/lib/types';
+import type { WorkoutSession, CalendarDay } from '@/lib/types';
 import {
   Timer,
   CalendarDays,
@@ -112,15 +112,35 @@ function UserDashboard() {
   const { user } = useAppStore();
   const t = useTheme();
   const [todayWorkout, setTodayWorkout] = useState<WorkoutSession | null>(null);
+  const [calendarDays, setCalendarDays] = useState<CalendarDay[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     if (!user) return;
-    FakeWorkoutService.getTodayWorkout(user.id)
-      .then(setTodayWorkout)
-      .finally(() => setLoading(false));
+    Promise.all([
+      WorkoutService.getTodayWorkout(user.id),
+      CalendarService.getCalendar(user.id),
+    ]).then(([workout, calendar]) => {
+      setTodayWorkout(workout);
+      setCalendarDays(calendar);
+    }).catch(() => {}).finally(() => setLoading(false));
   }, [user]);
+
+  const completedSessions = calendarDays.filter(d => d.status === 'completed').length;
+  const streak = (() => {
+    const today = new Date();
+    let count = 0;
+    for (let i = 0; i < 30; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      const entry = calendarDays.find(c => c.date === dateStr);
+      if (entry?.status === 'completed') count++;
+      else if (i > 0) break;
+    }
+    return count;
+  })();
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Buenos dias' : hour < 18 ? 'Buenas tardes' : 'Buenas noches';
@@ -186,9 +206,9 @@ function UserDashboard() {
 
         {/* Metrics */}
         <View style={{ flexDirection: 'row', gap: 10 }}>
-          <MetricCard icon={Zap}       value="14"          label="Sesiones"    iconColor={t.accent}  />
-          <MetricCard icon={Flame}     value="5 dias"      label="Racha"       iconColor={t.orange}  />
-          <MetricCard icon={TrendingUp} value={`${user?.weight}kg`} label="Peso" iconColor={t.info} />
+          <MetricCard icon={Zap}       value={String(completedSessions)} label="Sesiones"    iconColor={t.accent}  />
+          <MetricCard icon={Flame}     value={streak > 0 ? `${streak}d` : '—'} label="Racha" iconColor={t.orange}  />
+          <MetricCard icon={TrendingUp} value={user?.weight ? `${user.weight}kg` : '—'} label="Peso" iconColor={t.info} />
         </View>
       </View>
 

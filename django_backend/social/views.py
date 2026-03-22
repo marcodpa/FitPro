@@ -29,7 +29,7 @@ class PostViewSet(viewsets.ModelViewSet):
         else:
             post.likes.add(request.user)
             liked = True
-        return Response({'liked': liked, 'likes_count': post.likes_count})
+        return Response(PostSerializer(post, context={'request': request}).data)
 
     @action(detail=True, methods=['post'], url_path='comment')
     def comment(self, request, pk=None):

@@ -10,9 +10,10 @@ import {
   StatusBar,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { FakeRoutineService } from '@/lib/services';
+import { RoutineService, WorkoutService } from '@/lib/services';
 import type { Routine } from '@/lib/types';
-import { useTheme } from '@/lib/store';
+import { useAppStore, useTheme } from '@/lib/store';
+import { useVoiceCommands } from '@/lib/useVoiceCommands';
 import { FONT, RADIUS, SPACING } from '@/lib/theme';
 import {
   X,
@@ -164,6 +165,7 @@ export default function WorkoutSessionScreen() {
   const { routineId } = useLocalSearchParams<{ routineId: string }>();
   const router = useRouter();
   const t = useTheme();
+  const { voiceEnabled } = useAppStore();
 
   const [routine, setRoutine] = useState<Routine | null>(null);
   const [currentExIdx, setCurrentExIdx] = useState(0);
@@ -178,8 +180,9 @@ export default function WorkoutSessionScreen() {
 
   useEffect(() => {
     if (!routineId) return;
-    FakeRoutineService.getById(routineId).then(setRoutine);
+    RoutineService.getById(routineId).then(setRoutine).catch(() => {});
   }, [routineId]);
+
 
   useEffect(() => {
     totalRef.current = setInterval(() => setTotalElapsed((s) => s + 1), 1000);
@@ -242,6 +245,36 @@ export default function WorkoutSessionScreen() {
       { text: 'Salir', style: 'destructive', onPress: () => router.back() },
     ]);
   };
+
+  // ── Voice commands during workout ────────────────────────────────────────
+  const phaseRef = useRef(phase);
+  useEffect(() => { phaseRef.current = phase; }, [phase]);
+
+  const handleVoiceCommand = useCallback((action: string) => {
+    const p = phaseRef.current;
+    switch (action) {
+      case 'workout:start':   if (p === 'idle')    setPhase('working'); break;
+      case 'workout:done':    if (p === 'working') markSetDone();       break;
+      case 'workout:skip':    if (p === 'resting') skipRest();          break;
+      case 'workout:next':    nextSet();                                 break;
+      case 'workout:finish':  setPhase('done');                         break;
+      case 'nav:back':        confirmExit();                            break;
+    }
+  }, [markSetDone, skipRest, nextSet]); // eslint-disable-line
+
+  useVoiceCommands({
+    enabled: voiceEnabled,
+    lang: 'es-ES',
+    onCommand: handleVoiceCommand,
+    extraCommands: [
+      { pattern: /\b(iniciar|empezar|comenzar)\s*(serie|set)?\b/i,           action: 'workout:start',  label: 'Iniciar serie' },
+      { pattern: /\b(complet[ao]|hech[ao]|listo|termina[do]?)\s*(serie)?\b/i, action: 'workout:done',   label: 'Serie completada' },
+      { pattern: /\b(saltar?)\s*(descanso)?\b/i,                              action: 'workout:skip',   label: 'Saltar descanso' },
+      { pattern: /\b(siguiente|sigue)\b/i,                                    action: 'workout:next',   label: 'Siguiente ejercicio' },
+      { pattern: /\b(finalizar|terminar|acabar)\s*(entrenamiento)?\b/i,       action: 'workout:finish', label: 'Finalizar entrenamiento' },
+      { pattern: /\b(salir|volver)\b/i,                                       action: 'nav:back',       label: 'Salir' },
+    ],
+  });
 
   // ── Loading ──────────────────────────────────────────────────────────────────
   if (!routine) {
@@ -333,12 +366,19 @@ export default function WorkoutSessionScreen() {
             </Text>
           </View>
 
-          {/* Series counter */}
-          <View style={{ width: 80, height: 36, borderRadius: RADIUS.md, backgroundColor: t.bg.card, borderWidth: 1, borderColor: t.border.default, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: t.text.secondary, fontSize: FONT.sm, fontWeight: '700' }}>
-              {doneSets}/{totalSets}
-            </Text>
-          </View>
+          {/* Series counter / Voice indicator */}
+          {voiceEnabled ? (
+            <View style={{ width: 80, height: 36, borderRadius: RADIUS.md, backgroundColor: t.accentDim, borderWidth: 1, borderColor: t.accent + '40', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 4 }}>
+              <Mic size={12} color={t.accent} strokeWidth={2.5} />
+              <Text style={{ color: t.accent, fontSize: FONT.xs, fontWeight: '700' }}>VOZ</Text>
+            </View>
+          ) : (
+            <View style={{ width: 80, height: 36, borderRadius: RADIUS.md, backgroundColor: t.bg.card, borderWidth: 1, borderColor: t.border.default, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: t.text.secondary, fontSize: FONT.sm, fontWeight: '700' }}>
+                {doneSets}/{totalSets}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Progress bar */}
