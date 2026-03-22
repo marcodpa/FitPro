@@ -24,25 +24,113 @@ export type VoiceStatus = 'standby' | 'idle' | 'listening' | 'processing' | 'err
 
 export interface VoiceCommand {
   pattern: RegExp;
-  label: string;
   action: string;
+  label: string;
+  /** Canonical example phrases (utterances) for this intent — used in the voice catalog UI */
+  utterances: string[];
 }
 
+/**
+ * VOICE CATALOG
+ * -------------
+ * Formal mapping of intents → utterances, following the methodology from Paucar (2021)
+ * and Fuentes (2022): commands/intents are mapped to app functions via RegExp pattern matching,
+ * without building a custom ASR system. This catalog is also consumed by VoiceCatalogModal
+ * to expose available commands to the user.
+ */
 export const COMMANDS: VoiceCommand[] = [
-  // Navigation
-  { pattern: /\binicio\b|\bhome\b|\bprincipal\b/i,             label: 'Ir a Inicio',           action: 'nav:home' },
-  { pattern: /\brutinas?\b/i,                                   label: 'Ir a Rutinas',          action: 'nav:routines' },
-  { pattern: /\bsocial\b|\bcomunidad\b/i,                       label: 'Ir a Social',           action: 'nav:social' },
-  { pattern: /\bchat\b|\bmensajes?\b/i,                         label: 'Ir a Chat',             action: 'nav:chat' },
-  { pattern: /\bperfil\b|\bprofil\b/i,                          label: 'Ir a Perfil',           action: 'nav:profile' },
-  // Theme
-  { pattern: /\boscur[oa]\b|\bnoche\b|\bdark\b/i,               label: 'Modo Oscuro',           action: 'theme:dark' },
-  { pattern: /\bclar[oa]\b|\bluz\b|\blight\b/i,                 label: 'Modo Claro',            action: 'theme:light' },
-  // Workout
-  { pattern: /\bempez[ae]r?\b.*\bentren\b|\biniciar?\b.*\bsesi[oó]n\b|\bentren[ae]r?\b/i,
-                                                                  label: 'Iniciar Entrenamiento', action: 'nav:workout' },
-  // Session
-  { pattern: /\bcerrar sesi[oó]n\b|\bsalir\b|\bdesconectar\b/i, label: 'Cerrar Sesión',        action: 'auth:logout' },
+  // ── Navigation ──────────────────────────────────────────────────────────────
+  {
+    pattern:    /\binicio\b|\bhome\b|\bprincipal\b/i,
+    action:     'nav:home',
+    label:      'Ir a Inicio',
+    utterances: ['inicio', 'ir a inicio', 'pantalla principal', 'home'],
+  },
+  {
+    pattern:    /\brutinas?\b/i,
+    action:     'nav:routines',
+    label:      'Ir a Rutinas',
+    utterances: ['rutinas', 'ir a rutinas', 'mis rutinas', 'ver rutinas'],
+  },
+  {
+    pattern:    /\bsocial\b|\bcomunidad\b/i,
+    action:     'nav:social',
+    label:      'Ir a Social',
+    utterances: ['social', 'comunidad', 'ir a social', 'ver comunidad'],
+  },
+  {
+    pattern:    /\bchat\b|\bmensajes?\b/i,
+    action:     'nav:chat',
+    label:      'Ir a Chat',
+    utterances: ['chat', 'mensajes', 'ir al chat', 'ver mensajes'],
+  },
+  {
+    pattern:    /\bperfil\b|\bprofil\b/i,
+    action:     'nav:profile',
+    label:      'Ir a Perfil',
+    utterances: ['perfil', 'mi perfil', 'ir al perfil', 'ver perfil'],
+  },
+  // ── Theme ────────────────────────────────────────────────────────────────────
+  {
+    pattern:    /\boscur[oa]\b|\bnoche\b|\bdark\b/i,
+    action:     'theme:dark',
+    label:      'Modo Oscuro',
+    utterances: ['modo oscuro', 'tema oscuro', 'modo noche', 'dark'],
+  },
+  {
+    pattern:    /\bclar[oa]\b|\bluz\b|\blight\b/i,
+    action:     'theme:light',
+    label:      'Modo Claro',
+    utterances: ['modo claro', 'tema claro', 'modo luz', 'light'],
+  },
+  // ── Workout ──────────────────────────────────────────────────────────────────
+  {
+    pattern:    /\bempez[ae]r?\b.*\bentren\b|\biniciar?\b.*\bsesi[oó]n\b|\bentren[ae]r?\b/i,
+    action:     'nav:workout',
+    label:      'Iniciar Entrenamiento',
+    utterances: ['iniciar entrenamiento', 'empezar entrenamiento', 'iniciar sesión', 'entrenar'],
+  },
+  // ── Auth ─────────────────────────────────────────────────────────────────────
+  {
+    pattern:    /\bcerrar sesi[oó]n\b|\bdesconectar\b/i,
+    action:     'auth:logout',
+    label:      'Cerrar Sesión',
+    utterances: ['cerrar sesión', 'desconectar', 'salir de la cuenta'],
+  },
+];
+
+/** Workout-session specific commands (also exposed in catalog) */
+export const WORKOUT_COMMANDS: VoiceCommand[] = [
+  {
+    pattern:    /\b(iniciar|empezar|comenzar)\s*(serie|set)?\b/i,
+    action:     'workout:start',
+    label:      'Iniciar serie',
+    utterances: ['iniciar serie', 'empezar serie', 'comenzar', 'iniciar set'],
+  },
+  {
+    pattern:    /\b(complet[ao]|hech[ao]|listo|termina[do]?)\s*(serie)?\b/i,
+    action:     'workout:done',
+    label:      'Serie completada',
+    utterances: ['completado', 'hecho', 'listo', 'serie terminada'],
+  },
+  {
+    pattern:    /\b(saltar?)\s*(descanso)?\b/i,
+    action:     'workout:skip',
+    label:      'Saltar descanso',
+    utterances: ['saltar descanso', 'saltar', 'skip'],
+  },
+  {
+    pattern:    /\b(siguiente|sigue)\b/i,
+    action:     'workout:next',
+    label:      'Siguiente ejercicio',
+    utterances: ['siguiente', 'sigue', 'siguiente ejercicio'],
+  },
+  {
+    pattern:    /\b(finalizar|terminar|acabar)\s*(entrenamiento)?\b/i,
+    action:     'workout:finish',
+    label:      'Finalizar entrenamiento',
+    utterances: ['finalizar', 'terminar entrenamiento', 'acabar', 'finalizar entrenamiento'],
+  },
 ];
 
 // Wake word patterns — catches: "ey fit pro", "hey fit pro", "oye fit pro", "ei fit pro"

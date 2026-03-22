@@ -13,7 +13,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { RoutineService, WorkoutService } from '@/lib/services';
 import type { Routine } from '@/lib/types';
 import { useAppStore, useTheme } from '@/lib/store';
-import { useVoiceCommands } from '@/lib/useVoiceCommands';
+import { useVoiceCommands, WORKOUT_COMMANDS } from '@/lib/useVoiceCommands';
 import { FONT, RADIUS, SPACING } from '@/lib/theme';
 import {
   X,
@@ -266,13 +266,10 @@ export default function WorkoutSessionScreen() {
     enabled: voiceEnabled,
     lang: 'es-ES',
     onCommand: handleVoiceCommand,
+    // Use the central WORKOUT_COMMANDS catalog + a back/exit command
     extraCommands: [
-      { pattern: /\b(iniciar|empezar|comenzar)\s*(serie|set)?\b/i,           action: 'workout:start',  label: 'Iniciar serie' },
-      { pattern: /\b(complet[ao]|hech[ao]|listo|termina[do]?)\s*(serie)?\b/i, action: 'workout:done',   label: 'Serie completada' },
-      { pattern: /\b(saltar?)\s*(descanso)?\b/i,                              action: 'workout:skip',   label: 'Saltar descanso' },
-      { pattern: /\b(siguiente|sigue)\b/i,                                    action: 'workout:next',   label: 'Siguiente ejercicio' },
-      { pattern: /\b(finalizar|terminar|acabar)\s*(entrenamiento)?\b/i,       action: 'workout:finish', label: 'Finalizar entrenamiento' },
-      { pattern: /\b(salir|volver)\b/i,                                       action: 'nav:back',       label: 'Salir' },
+      ...WORKOUT_COMMANDS,
+      { pattern: /\b(salir|volver)\b/i, action: 'nav:back', label: 'Salir', utterances: ['salir', 'volver'] },
     ],
   });
 

@@ -11,7 +11,7 @@
  *   unsupported→ hidden (browser can't do it)
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -23,6 +23,7 @@ import {
 import { Mic, MicOff, AlertCircle } from 'lucide-react-native';
 import type { VoiceStatus } from '@/lib/useVoiceCommands';
 import { FONT, RADIUS, SPACING } from '@/lib/theme';
+import VoiceCatalogModal from './VoiceCatalogModal';
 
 interface Props {
   status: VoiceStatus;
@@ -46,6 +47,7 @@ export default function VoiceCommandOverlay({
   isSupported,
   onActivate,
 }: Props) {
+  const [catalogOpen, setCatalogOpen] = useState(false);
   const pulseAnim    = useRef(new Animated.Value(1)).current;
   const pulseOpacity = useRef(new Animated.Value(0)).current;
   const bubbleOpacity = useRef(new Animated.Value(0)).current;
@@ -103,6 +105,8 @@ export default function VoiceCommandOverlay({
 
   if (!isSupported || status === 'idle') return null;
 
+  const handleLongPress = () => setCatalogOpen(true);
+
   const btnColor = isError
     ? ERROR_COLOR
     : isListening || isProcessing
@@ -121,6 +125,7 @@ export default function VoiceCommandOverlay({
 
   return (
     <View style={styles.container} pointerEvents="box-none">
+      <VoiceCatalogModal visible={catalogOpen} onClose={() => setCatalogOpen(false)} />
 
       {/* Transcript / command bubble */}
       {showBubble && (
@@ -146,9 +151,9 @@ export default function VoiceCommandOverlay({
 
       {/* Standby hint label */}
       {isStandby && !showBubble && (
-        <View style={styles.wakeHint} pointerEvents="none">
-          <Text style={styles.wakeHintText}>Di "Ey Fit Pro"</Text>
-        </View>
+        <TouchableOpacity style={styles.wakeHint} onPress={() => setCatalogOpen(true)} activeOpacity={0.7}>
+          <Text style={styles.wakeHintText}>Di "Ey Fit Pro"  ·  mantén para ayuda</Text>
+        </TouchableOpacity>
       )}
 
       {/* Pulse ring */}
@@ -171,6 +176,8 @@ export default function VoiceCommandOverlay({
       <Animated.View style={{ transform: [{ scale: btnScale }] }}>
         <TouchableOpacity
           onPress={onActivate}
+          onLongPress={handleLongPress}
+          delayLongPress={600}
           activeOpacity={0.8}
           style={[
             styles.micBtn,
