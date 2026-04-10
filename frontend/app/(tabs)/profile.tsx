@@ -30,6 +30,9 @@ import {
   Users,
   User,
   Zap,
+  Send,
+  Clock,
+  CheckCircle,
 } from 'lucide-react-native';
 import { FONT, RADIUS, SPACING } from '@/lib/theme';
 
@@ -169,6 +172,24 @@ export default function ProfileTab() {
   const t = useTheme();
   const router = useRouter();
   const [showVoiceSheet, setShowVoiceSheet] = useState(false);
+  const [trainerRequestStatus, setTrainerRequestStatus] = useState<'none' | 'pending' | 'sent'>('none');
+
+  const handleTrainerRequest = () => {
+    Alert.alert(
+      'Solicitar ser Entrenador',
+      'Tu solicitud será revisada por un administrador. Te notificaremos cuando sea aprobada.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Enviar solicitud',
+          onPress: () => {
+            setTrainerRequestStatus('sent');
+            Alert.alert('¡Solicitud enviada!', 'Revisaremos tu solicitud y te contactaremos pronto.');
+          },
+        },
+      ]
+    );
+  };
 
   const handleLogout = () => {
     Alert.alert('Cerrar Sesion', 'Estas seguro que quieres salir?', [
@@ -456,41 +477,84 @@ export default function ProfileTab() {
           </View>
         </View>
 
-        {/* Role switcher */}
-        <SectionHeader title="Cambiar Rol (Demo)" />
-        <View
-          style={{
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            gap: SPACING.sm,
-            paddingHorizontal: SPACING.xxl,
-          }}>
-          {ROLE_OPTIONS.map((r) => {
-            const isActive = activeRole === r.value;
-            return (
-              <TouchableOpacity
-                key={r.value}
-                onPress={() => setRole(r.value)}
-                style={{
-                  paddingHorizontal: SPACING.lg,
-                  paddingVertical: SPACING.md,
-                  borderRadius: RADIUS.lg,
-                  backgroundColor: isActive ? r.color : t.bg.card,
-                  borderWidth: 1,
-                  borderColor: isActive ? r.color : t.border.default,
-                }}>
-                <Text
+        {/* Trainer request — only shown to clients */}
+        {(activeRole === 'client' || activeRole === 'user') && (
+          <>
+            <SectionHeader title="Conviértete en Entrenador" />
+            <View style={{ paddingHorizontal: SPACING.xxl }}>
+              {trainerRequestStatus === 'sent' ? (
+                /* Sent state */
+                <View
                   style={{
-                    color: isActive ? '#fff' : t.text.secondary,
-                    fontWeight: '700',
-                    fontSize: FONT.sm,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: SPACING.lg,
+                    backgroundColor: 'rgba(251,191,36,0.08)',
+                    borderRadius: RADIUS.xl,
+                    padding: SPACING.lg,
+                    borderWidth: 1,
+                    borderColor: 'rgba(251,191,36,0.3)',
                   }}>
-                  {r.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+                  <View
+                    style={{
+                      width: 42,
+                      height: 42,
+                      borderRadius: RADIUS.lg,
+                      backgroundColor: 'rgba(251,191,36,0.15)',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                    <Clock size={20} color="#fbbf24" strokeWidth={2.5} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: t.text.primary, fontWeight: '700', fontSize: FONT.base }}>
+                      Solicitud enviada
+                    </Text>
+                    <Text style={{ color: t.text.secondary, fontSize: FONT.xs, marginTop: 2 }}>
+                      En revisión · Te notificaremos pronto
+                    </Text>
+                  </View>
+                  <CheckCircle size={18} color="#fbbf24" strokeWidth={2} />
+                </View>
+              ) : (
+                /* CTA state */
+                <TouchableOpacity
+                  onPress={handleTrainerRequest}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: SPACING.lg,
+                    backgroundColor: 'rgba(129,140,248,0.08)',
+                    borderRadius: RADIUS.xl,
+                    padding: SPACING.lg,
+                    borderWidth: 1,
+                    borderColor: 'rgba(129,140,248,0.3)',
+                  }}>
+                  <View
+                    style={{
+                      width: 42,
+                      height: 42,
+                      borderRadius: RADIUS.lg,
+                      backgroundColor: 'rgba(129,140,248,0.15)',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                    <Dumbbell size={20} color="#818cf8" strokeWidth={2.5} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: t.text.primary, fontWeight: '700', fontSize: FONT.base }}>
+                      Solicitar ser Entrenador
+                    </Text>
+                    <Text style={{ color: t.text.secondary, fontSize: FONT.xs, marginTop: 2 }}>
+                      Crea rutinas y acompaña a tus clientes
+                    </Text>
+                  </View>
+                  <Send size={16} color="#818cf8" strokeWidth={2} />
+                </TouchableOpacity>
+              )}
+            </View>
+          </>
+        )}
 
         {/* More options */}
         <SectionHeader title="Mas opciones" />

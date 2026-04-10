@@ -14,20 +14,12 @@ import { useRouter } from 'expo-router';
 import { useAppStore, useTheme } from '@/lib/store';
 import { AuthService } from '@/lib/services';
 import { FONT, RADIUS, SPACING } from '@/lib/theme';
-import type { UserRole } from '@/lib/types';
-import { User, PersonStanding, Dumbbell, ArrowLeft } from 'lucide-react-native';
-
-const ROLES: { label: string; value: UserRole; icon: React.ReactNode }[] = [
-  { label: 'Cliente', value: 'client', icon: null },
-  { label: 'Entrenador', value: 'trainer', icon: null },
-  { label: 'Usuario', value: 'user', icon: null },
-];
+import { ArrowLeft } from 'lucide-react-native';
 
 export default function RegisterScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<UserRole>('client');
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const router = useRouter();
@@ -45,7 +37,7 @@ export default function RegisterScreen() {
     }
     setLoading(true);
     try {
-      const { user, token } = await AuthService.register(name, email, password, role);
+      const { user, token } = await AuthService.register(name, email, password, 'client');
       login(user, token);
       router.replace('/(tabs)');
     } catch (e: any) {
@@ -53,13 +45,6 @@ export default function RegisterScreen() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const roleIcons: Record<UserRole, React.ReactNode> = {
-    client: <PersonStanding size={22} color={role === 'client' ? t.accentText : t.text.secondary} />,
-    trainer: <Dumbbell size={22} color={role === 'trainer' ? t.accentText : t.text.secondary} />,
-    user: <User size={22} color={role === 'user' ? t.accentText : t.text.secondary} />,
-    admin: <User size={22} color={role === 'admin' ? t.accentText : t.text.secondary} />,
   };
 
   return (
@@ -110,52 +95,6 @@ export default function RegisterScreen() {
         </View>
 
         <View style={{ flex: 1, paddingHorizontal: SPACING.xxxl, paddingTop: SPACING.xxl }}>
-          {/* Role selector */}
-          <View style={{ marginBottom: SPACING.xxl }}>
-            <Text
-              style={{
-                color: t.text.secondary,
-                fontSize: FONT.sm,
-                marginBottom: SPACING.sm,
-                fontWeight: '600',
-                letterSpacing: 0.5,
-                textTransform: 'uppercase',
-              }}>
-              Soy un...
-            </Text>
-            <View style={{ flexDirection: 'row', gap: SPACING.sm }}>
-              {ROLES.map((r) => {
-                const isSelected = role === r.value;
-                return (
-                  <TouchableOpacity
-                    key={r.value}
-                    onPress={() => setRole(r.value)}
-                    style={{
-                      flex: 1,
-                      borderRadius: RADIUS.lg,
-                      paddingVertical: SPACING.md,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: SPACING.xs,
-                      backgroundColor: isSelected ? t.accent : t.bg.card,
-                      borderWidth: 1.5,
-                      borderColor: isSelected ? t.accent : t.border.default,
-                    }}>
-                    {roleIcons[r.value]}
-                    <Text
-                      style={{
-                        fontSize: FONT.sm,
-                        fontWeight: '700',
-                        color: isSelected ? t.accentText : t.text.secondary,
-                      }}>
-                      {r.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-
           {/* Name */}
           <View style={{ marginBottom: SPACING.md }}>
             <Text
