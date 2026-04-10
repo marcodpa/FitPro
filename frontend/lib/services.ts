@@ -184,6 +184,13 @@ export const FakeChatService = {
       c.participants.some((p) => p.id === userId)
     );
   },
+  async getConversationWith(userId: string, otherUserId: string): Promise<Conversation | null> {
+    await delay(200);
+    return MOCK_CONVERSATIONS.find((c) =>
+      c.participants.some((p) => p.id === userId) &&
+      c.participants.some((p) => p.id === otherUserId)
+    ) ?? null;
+  },
   async getMessages(conversationId: string): Promise<ChatMessage[]> {
     await delay();
     return MOCK_MESSAGES.filter((m) => m.conversationId === conversationId).sort(

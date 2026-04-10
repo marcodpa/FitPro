@@ -377,11 +377,13 @@ function TrainerDashboard() {
       <View style={{ paddingHorizontal: SPACING.xl, paddingTop: SPACING.xxl, gap: SPACING.xxl }}>
         {/* Clients */}
         <View>
-          <SectionHeader title="Mis Clientes" action="Ver chats" onAction={() => router.push('/chat')} />
+          <SectionHeader title="Mis Clientes" action="Ver todos" onAction={() => router.push('/trainer/clients' as any)} />
           <View style={{ backgroundColor: t.bg.card, borderRadius: RADIUS.xl, overflow: 'hidden', borderWidth: 1, borderColor: t.border.subtle }}>
             {clients.map((client, i) => (
-              <View
+              <TouchableOpacity
                 key={client.id}
+                activeOpacity={0.75}
+                onPress={() => router.push(`/trainer/client/${client.id}` as any)}
                 style={{
                   flexDirection: 'row', alignItems: 'center', gap: 14,
                   paddingHorizontal: 18, paddingVertical: 14,
@@ -393,10 +395,13 @@ function TrainerDashboard() {
                   <Text style={{ color: t.text.primary, fontWeight: '700', fontSize: FONT.base }}>{client.name}</Text>
                   <Text style={{ color: t.text.secondary, fontSize: FONT.sm }}>{client.goal}</Text>
                 </View>
-                <View style={{ backgroundColor: t.successDim, borderRadius: RADIUS.sm, paddingHorizontal: 10, paddingVertical: 4 }}>
-                  <Text style={{ color: t.success, fontSize: 11, fontWeight: '700' }}>Activo</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.sm }}>
+                  <View style={{ backgroundColor: t.successDim, borderRadius: RADIUS.sm, paddingHorizontal: 10, paddingVertical: 4 }}>
+                    <Text style={{ color: t.success, fontSize: 11, fontWeight: '700' }}>Activo</Text>
+                  </View>
+                  <ChevronRight size={15} color={t.text.tertiary} />
                 </View>
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
         </View>
