@@ -209,13 +209,13 @@ export default function ProfileTab() {
   };
 
   const handleLogout = () => {
-    Alert.alert('Cerrar Sesion', 'Estas seguro que quieres salir?', [
+    Alert.alert('Cerrar Sesión', '¿Estás seguro que quieres salir?', [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Salir',
         style: 'destructive',
-        onPress: () => {
-          logout();
+        onPress: async () => {
+          await logout();
           router.replace('/auth/login');
         },
       },

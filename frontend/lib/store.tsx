@@ -31,7 +31,7 @@ interface AppState {
   isHydrated: boolean;
   // Actions
   login: (user: User, token: string) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   setOnboarded: () => void;
   setRole: (role: UserRole) => void;
   toggleOffline: () => void;
@@ -91,12 +91,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     AsyncStorage.setItem('access_token', t);
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     setUser(null);
     setToken(null);
-    AsyncStorage.removeItem(STORAGE_KEYS.USER);
-    AsyncStorage.removeItem(STORAGE_KEYS.TOKEN);
-    TokenStorage.clear();
+    await Promise.all([
+      AsyncStorage.removeItem(STORAGE_KEYS.USER),
+      AsyncStorage.removeItem(STORAGE_KEYS.TOKEN),
+      TokenStorage.clear(),
+    ]);
   }, []);
 
   const setOnboarded = useCallback(() => {

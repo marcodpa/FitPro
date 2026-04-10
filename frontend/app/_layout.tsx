@@ -90,8 +90,8 @@ function VoiceLayer() {
               {
                 text: 'Salir',
                 style: 'destructive',
-                onPress: () => {
-                  logout();
+                onPress: async () => {
+                  await logout();
                   router.replace('/auth/login');
                 },
               },
