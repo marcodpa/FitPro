@@ -1,6 +1,6 @@
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import { useAppStore, useTheme } from '@/lib/store';
-import { View, Text, Platform } from 'react-native';
+import { View, Text, Platform, TouchableOpacity } from 'react-native';
 import {
   Home,
   Dumbbell,
@@ -58,13 +58,16 @@ function TabIcon({
 export default function TabsLayout() {
   const { isOffline } = useAppStore();
   const t = useTheme();
+  const router = useRouter();
 
   return (
     <>
       {isOffline && (
-        <View
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => router.push('/offline' as any)}
           style={{
-            backgroundColor: t.warning,
+            backgroundColor: '#fbbf24',
             paddingTop: 52,
             paddingBottom: 10,
             paddingHorizontal: 20,
@@ -73,10 +76,11 @@ export default function TabsLayout() {
             gap: 8,
           }}>
           <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: '#000' }} />
-          <Text style={{ color: '#000', fontWeight: '700', fontSize: 12, letterSpacing: 0.2 }}>
-            SIN CONEXION — modo offline activo
+          <Text style={{ color: '#000', fontWeight: '700', fontSize: 12, letterSpacing: 0.2, flex: 1 }}>
+            SIN CONEXIÓN — modo offline activo
           </Text>
-        </View>
+          <Text style={{ color: '#00000080', fontWeight: '600', fontSize: 11 }}>Ver opciones →</Text>
+        </TouchableOpacity>
       )}
       <Tabs
         screenOptions={{
