@@ -2,7 +2,6 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { User, UserRole } from './types';
 import { getTheme, type Theme } from './theme';
-import { TokenStorage } from './api';
 
 const STORAGE_KEYS = {
   USER: '@fitpro:user',
@@ -97,7 +96,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await Promise.all([
       AsyncStorage.removeItem(STORAGE_KEYS.USER),
       AsyncStorage.removeItem(STORAGE_KEYS.TOKEN),
-      TokenStorage.clear(),
+      AsyncStorage.removeItem('access_token'),
     ]);
   }, []);
 
