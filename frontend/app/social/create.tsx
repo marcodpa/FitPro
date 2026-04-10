@@ -12,10 +12,11 @@ import {
   Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import { FakeSocialService } from '@/lib/services';
 import { useAppStore, useTheme } from '@/lib/store';
 import { FONT, RADIUS, SPACING } from '@/lib/theme';
-import { ArrowLeft, Send, Image as ImageIcon, Hash, X } from 'lucide-react-native';
+import { ArrowLeft, Send, Image as ImageIcon, Hash, X, Camera, FolderOpen } from 'lucide-react-native';
 
 const SAMPLE_IMAGES = [
   'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600',
@@ -34,6 +35,47 @@ export default function CreatePostScreen() {
   const { user } = useAppStore();
   const router = useRouter();
   const t = useTheme();
+
+  const pickFromGallery = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permiso requerido', 'Necesitamos acceso a tu galería para seleccionar imágenes.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.85,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setSelectedImage(result.assets[0].uri);
+    }
+  };
+
+  const pickFromCamera = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permiso requerido', 'Necesitamos acceso a tu cámara para tomar fotos.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.85,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setSelectedImage(result.assets[0].uri);
+    }
+  };
+
+  const handlePickImage = () => {
+    Alert.alert('Añadir imagen', '¿De dónde quieres subir la imagen?', [
+      { text: 'Cámara',  onPress: pickFromCamera },
+      { text: 'Galería', onPress: pickFromGallery },
+      { text: 'Cancelar', style: 'cancel' },
+    ]);
+  };
 
   const canPost = text.trim().length > 0;
 
@@ -239,25 +281,62 @@ export default function CreatePostScreen() {
         </View>
 
         {/* Image selection */}
-        <View style={{ marginBottom: SPACING.xl }}>
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: SPACING.xs,
-              marginBottom: SPACING.sm,
-            }}>
+        <View style={{ marginBottom: SPACING.xl, gap: SPACING.sm }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, marginBottom: 2 }}>
             <ImageIcon size={14} color={t.text.secondary} />
-            <Text
-              style={{
-                color: t.text.secondary,
-                fontSize: FONT.sm,
-                fontWeight: '600',
-              }}>
+            <Text style={{ color: t.text.secondary, fontSize: FONT.sm, fontWeight: '600' }}>
               Añadir imagen (opcional)
             </Text>
           </View>
 
+          {/* Picker buttons */}
+          <View style={{ flexDirection: 'row', gap: SPACING.sm }}>
+            <TouchableOpacity
+              onPress={pickFromCamera}
+              style={{
+                flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+                gap: SPACING.sm, backgroundColor: t.bg.card, borderRadius: RADIUS.lg,
+                paddingVertical: 13, borderWidth: 1.5, borderColor: t.border.default,
+              }}>
+              <Camera size={17} color={t.accent} strokeWidth={2} />
+              <Text style={{ color: t.text.primary, fontWeight: '700', fontSize: FONT.sm }}>Cámara</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={pickFromGallery}
+              style={{
+                flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+                gap: SPACING.sm, backgroundColor: t.bg.card, borderRadius: RADIUS.lg,
+                paddingVertical: 13, borderWidth: 1.5, borderColor: t.border.default,
+              }}>
+              <FolderOpen size={17} color={t.info} strokeWidth={2} />
+              <Text style={{ color: t.text.primary, fontWeight: '700', fontSize: FONT.sm }}>Galería</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Preview selected image from phone */}
+          {selectedImage && !SAMPLE_IMAGES.includes(selectedImage) && (
+            <View style={{ position: 'relative' }}>
+              <Image
+                source={{ uri: selectedImage }}
+                style={{ width: '100%', height: 220, borderRadius: RADIUS.xl, backgroundColor: t.bg.tertiary }}
+                resizeMode="cover"
+              />
+              <TouchableOpacity
+                onPress={() => setSelectedImage(null)}
+                style={{
+                  position: 'absolute', top: 10, right: 10,
+                  width: 30, height: 30, borderRadius: 15,
+                  backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center',
+                }}>
+                <X size={14} color="#fff" strokeWidth={2.5} />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Sample images */}
+          <Text style={{ color: t.text.tertiary, fontSize: FONT.xs, fontWeight: '600', marginTop: SPACING.xs }}>
+            O elige una imagen de muestra:
+          </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View style={{ flexDirection: 'row', gap: SPACING.sm }}>
               {SAMPLE_IMAGES.map((img) => {
@@ -269,25 +348,16 @@ export default function CreatePostScreen() {
                     <Image
                       source={{ uri: img }}
                       style={{
-                        width: 100,
-                        height: 100,
-                        borderRadius: RADIUS.lg,
-                        borderWidth: 2.5,
-                        borderColor: isSelected ? t.accent : 'transparent',
+                        width: 100, height: 100, borderRadius: RADIUS.lg,
+                        borderWidth: 2.5, borderColor: isSelected ? t.accent : 'transparent',
                       }}
                     />
                     {isSelected && (
                       <View
                         style={{
-                          position: 'absolute',
-                          top: 6,
-                          right: 6,
-                          width: 22,
-                          height: 22,
-                          borderRadius: RADIUS.full,
-                          backgroundColor: t.accent,
-                          alignItems: 'center',
-                          justifyContent: 'center',
+                          position: 'absolute', top: 6, right: 6,
+                          width: 22, height: 22, borderRadius: RADIUS.full,
+                          backgroundColor: t.accent, alignItems: 'center', justifyContent: 'center',
                         }}>
                         <X size={12} color={t.accentText} strokeWidth={3} />
                       </View>
@@ -297,26 +367,26 @@ export default function CreatePostScreen() {
               })}
             </View>
           </ScrollView>
-        </View>
 
-        {/* Preview selected image */}
-        {selectedImage && (
-          <View style={{ marginBottom: SPACING.xl }}>
-            <Text
-              style={{
-                color: t.text.secondary,
-                fontSize: FONT.xs,
-                marginBottom: SPACING.sm,
-                fontWeight: '600',
-              }}>
-              Vista previa:
-            </Text>
-            <Image
-              source={{ uri: selectedImage }}
-              style={{ width: '100%', height: 200, borderRadius: RADIUS.xl }}
-            />
-          </View>
-        )}
+          {/* Preview sample image */}
+          {selectedImage && SAMPLE_IMAGES.includes(selectedImage) && (
+            <View style={{ position: 'relative', marginTop: SPACING.xs }}>
+              <Image
+                source={{ uri: selectedImage }}
+                style={{ width: '100%', height: 200, borderRadius: RADIUS.xl }}
+              />
+              <TouchableOpacity
+                onPress={() => setSelectedImage(null)}
+                style={{
+                  position: 'absolute', top: 10, right: 10,
+                  width: 30, height: 30, borderRadius: 15,
+                  backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center',
+                }}>
+                <X size={14} color="#fff" strokeWidth={2.5} />
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
 
         <View style={{ height: 40 }} />
       </ScrollView>
