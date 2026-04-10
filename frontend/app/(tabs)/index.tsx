@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppStore, useTheme } from '@/lib/store';
-import { WorkoutService, CalendarService, FakePaymentService } from '@/lib/services';
+import { WorkoutService, CalendarService, FakePaymentService, FakeUserService } from '@/lib/services';
 import { FONT, RADIUS, SPACING } from '@/lib/theme';
 import type { WorkoutSession, CalendarDay } from '@/lib/types';
 import {
