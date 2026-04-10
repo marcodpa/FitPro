@@ -22,14 +22,13 @@ import {
   EyeOff,
   ArrowRight,
   Zap,
-  ChevronRight,
   CheckSquare,
   Square,
 } from 'lucide-react-native';
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState('alex@fitpro.com');
-  const [password, setPassword] = useState('123456');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [focused, setFocused] = useState<string | null>(null);
@@ -58,12 +57,6 @@ export default function LoginScreen() {
       setLoading(false);
     }
   };
-
-  const DEMO_ACCOUNTS = [
-    { label: 'Cliente',     role: 'client',  email: 'alex@fitpro.com',   dot: t.accent  },
-    { label: 'Entrenador',  role: 'trainer', email: 'carlos@fitpro.com', dot: t.info    },
-    { label: 'Admin',       role: 'admin',   email: 'admin@fitpro.com',  dot: t.orange  },
-  ];
 
   const fieldStyle = (field: string) => ({
     flexDirection: 'row' as const,
@@ -200,32 +193,7 @@ export default function LoginScreen() {
             </Link>
           </View>
 
-          {/* Divider */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 12 }}>
-            <View style={{ flex: 1, height: 1, backgroundColor: t.border.default }} />
-            <Text style={{ color: t.text.tertiary, fontSize: 10, fontWeight: '700', letterSpacing: 1.5 }}>ACCESO RAPIDO</Text>
-            <View style={{ flex: 1, height: 1, backgroundColor: t.border.default }} />
-          </View>
-
-          {/* Demo accounts */}
-          <View style={{ backgroundColor: t.bg.card, borderRadius: RADIUS.lg, overflow: 'hidden', borderWidth: 1, borderColor: t.border.subtle, marginBottom: 40 }}>
-            {DEMO_ACCOUNTS.map((a, i) => (
-              <TouchableOpacity
-                key={a.email}
-                onPress={() => { setEmail(a.email); setPassword('123456'); }}
-                activeOpacity={0.7}
-                style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 18, paddingVertical: 15, borderBottomWidth: i < DEMO_ACCOUNTS.length - 1 ? 1 : 0, borderBottomColor: t.border.subtle }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: a.dot }} />
-                  <View style={{ gap: 2 }}>
-                    <Text style={{ color: t.text.primary, fontWeight: '700', fontSize: FONT.base }}>{a.label}</Text>
-                    <Text style={{ color: t.text.tertiary, fontSize: 11 }}>{a.email}</Text>
-                  </View>
-                </View>
-                <ChevronRight size={15} color={t.text.tertiary} strokeWidth={2} />
-              </TouchableOpacity>
-            ))}
-          </View>
+          <View style={{ marginBottom: 40 }} />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

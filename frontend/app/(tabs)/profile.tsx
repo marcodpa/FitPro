@@ -33,14 +33,16 @@ import {
   Send,
   Clock,
   CheckCircle,
+  XCircle,
+  Bell,
 } from 'lucide-react-native';
 import { FONT, RADIUS, SPACING } from '@/lib/theme';
 
-const ROLE_OPTIONS: { label: string; value: UserRole; color: string }[] = [
-  { label: 'Cliente',     value: 'client',  color: '#22c55e' },
-  { label: 'Entrenador',  value: 'trainer', color: '#818cf8' },
-  { label: 'Admin',       value: 'admin',   color: '#f59e0b' },
-  { label: 'Usuario',     value: 'user',    color: '#64748b' },
+// Simulated pending trainer requests (in production this comes from the backend)
+const PENDING_TRAINER_REQUESTS = [
+  { id: '1', name: 'Laura Gómez',    email: 'laura@gmail.com',    date: '2026-04-08', avatar: 'https://api.dicebear.com/7.x/avataaars/png?seed=laura' },
+  { id: '2', name: 'Rodrigo Vargas', email: 'rodrigo@gmail.com',  date: '2026-04-09', avatar: 'https://api.dicebear.com/7.x/avataaars/png?seed=rodrigo' },
+  { id: '3', name: 'Sofía Méndez',   email: 'sofia@gmail.com',    date: '2026-04-10', avatar: 'https://api.dicebear.com/7.x/avataaars/png?seed=sofia' },
 ];
 
 function SectionHeader({ title }: { title: string }) {
@@ -173,6 +175,21 @@ export default function ProfileTab() {
   const router = useRouter();
   const [showVoiceSheet, setShowVoiceSheet] = useState(false);
   const [trainerRequestStatus, setTrainerRequestStatus] = useState<'none' | 'pending' | 'sent'>('none');
+  const [pendingRequests, setPendingRequests] = useState(PENDING_TRAINER_REQUESTS);
+
+  const handleApproveRequest = (id: string, name: string) => {
+    Alert.alert(`Aprobar a ${name}`, '¿Confirmar como Entrenador?', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Aprobar', onPress: () => setPendingRequests((r) => r.filter((x) => x.id !== id)) },
+    ]);
+  };
+
+  const handleRejectRequest = (id: string, name: string) => {
+    Alert.alert(`Rechazar a ${name}`, '¿Rechazar esta solicitud?', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Rechazar', style: 'destructive', onPress: () => setPendingRequests((r) => r.filter((x) => x.id !== id)) },
+    ]);
+  };
 
   const handleTrainerRequest = () => {
     Alert.alert(
@@ -551,6 +568,72 @@ export default function ProfileTab() {
                   </View>
                   <Send size={16} color="#818cf8" strokeWidth={2} />
                 </TouchableOpacity>
+              )}
+            </View>
+          </>
+        )}
+
+        {/* Admin: trainer requests panel */}
+        {activeRole === 'admin' && (
+          <>
+            <SectionHeader title="Solicitudes de Entrenador" />
+            <View style={{ paddingHorizontal: SPACING.xxl }}>
+              {pendingRequests.length === 0 ? (
+                <View style={{
+                  backgroundColor: t.bg.card, borderRadius: RADIUS.xl, padding: SPACING.xl,
+                  alignItems: 'center', gap: SPACING.sm, borderWidth: 1, borderColor: t.border.subtle,
+                }}>
+                  <CheckCircle size={28} color={t.success} strokeWidth={1.8} />
+                  <Text style={{ color: t.text.secondary, fontSize: FONT.sm, fontWeight: '600' }}>
+                    Sin solicitudes pendientes
+                  </Text>
+                </View>
+              ) : (
+                <View style={{ backgroundColor: t.bg.card, borderRadius: RADIUS.xl, overflow: 'hidden', borderWidth: 1, borderColor: t.border.subtle }}>
+                  {/* Badge header */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, padding: SPACING.lg, borderBottomWidth: 1, borderBottomColor: t.border.subtle }}>
+                    <Bell size={15} color={t.warning} strokeWidth={2.5} />
+                    <Text style={{ color: t.text.primary, fontWeight: '700', fontSize: FONT.sm, flex: 1 }}>
+                      Solicitudes pendientes
+                    </Text>
+                    <View style={{ backgroundColor: t.warning + '20', borderRadius: RADIUS.full, paddingHorizontal: 9, paddingVertical: 3, borderWidth: 1, borderColor: t.warning + '40' }}>
+                      <Text style={{ color: t.warning, fontWeight: '800', fontSize: FONT.xs }}>{pendingRequests.length}</Text>
+                    </View>
+                  </View>
+
+                  {pendingRequests.map((req, i) => (
+                    <View
+                      key={req.id}
+                      style={{
+                        flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
+                        padding: SPACING.lg,
+                        borderBottomWidth: i < pendingRequests.length - 1 ? 1 : 0,
+                        borderBottomColor: t.border.subtle,
+                      }}>
+                      <Image
+                        source={{ uri: req.avatar }}
+                        style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: t.bg.tertiary }}
+                      />
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: t.text.primary, fontWeight: '700', fontSize: FONT.sm }}>{req.name}</Text>
+                        <Text style={{ color: t.text.tertiary, fontSize: FONT.xs, marginTop: 1 }}>{req.email}</Text>
+                        <Text style={{ color: t.text.tertiary, fontSize: 10, marginTop: 1 }}>{req.date}</Text>
+                      </View>
+                      <View style={{ flexDirection: 'row', gap: SPACING.sm }}>
+                        <TouchableOpacity
+                          onPress={() => handleApproveRequest(req.id, req.name)}
+                          style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: t.success + '15', borderWidth: 1, borderColor: t.success + '40', alignItems: 'center', justifyContent: 'center' }}>
+                          <CheckCircle size={17} color={t.success} strokeWidth={2.5} />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => handleRejectRequest(req.id, req.name)}
+                          style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: t.danger + '15', borderWidth: 1, borderColor: t.danger + '40', alignItems: 'center', justifyContent: 'center' }}>
+                          <XCircle size={17} color={t.danger} strokeWidth={2.5} />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ))}
+                </View>
               )}
             </View>
           </>
