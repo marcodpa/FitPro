@@ -277,3 +277,14 @@ export const FakeCalendarService = {
     return MOCK_CALENDAR;
   },
 };
+
+// ─── REAL SERVICE ALIASES ─────────────────────────────────────────────────────
+export const AuthService     = FakeAuthService;
+export const UserService     = FakeUserService;
+export const RoutineService  = FakeRoutineService;
+export const WorkoutService  = FakeWorkoutService;
+export const ExerciseService = FakeExerciseService;
+export const ChatService     = FakeChatService;
+export const SocialService   = FakeSocialService;
+export const PaymentService  = FakePaymentService;
+export const CalendarService = FakeCalendarService;
