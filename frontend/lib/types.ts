@@ -49,6 +49,7 @@ export interface Routine {
   description: string;
   trainerId: string;
   userId?: string;
+  assignedTo?: string[];   // client user IDs this routine is assigned to
   exercises: RoutineExercise[];
   duration: number;
   difficulty: 'beginner' | 'intermediate' | 'advanced';

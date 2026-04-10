@@ -97,7 +97,9 @@ export const FakeRoutineService = {
   },
   async getByUserId(userId: string): Promise<Routine[]> {
     await delay();
-    return MOCK_ROUTINES.filter((r) => r.userId === userId);
+    return MOCK_ROUTINES.filter(
+      (r) => r.userId === userId || (r.assignedTo ?? []).includes(userId)
+    );
   },
   async getByTrainerId(trainerId: string): Promise<Routine[]> {
     await delay();
@@ -105,11 +107,12 @@ export const FakeRoutineService = {
   },
   async create(data: Partial<Routine>): Promise<Routine> {
     await delay(700);
-    return {
+    const routine: Routine = {
       id: `r${Date.now()}`,
       name: data.name ?? 'Nueva Rutina',
       description: data.description ?? '',
       trainerId: data.trainerId ?? 't1',
+      assignedTo: data.assignedTo ?? [],
       exercises: data.exercises ?? [],
       duration: data.duration ?? 45,
       difficulty: data.difficulty ?? 'intermediate',
@@ -117,6 +120,15 @@ export const FakeRoutineService = {
       imageUrl: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600',
       createdAt: new Date().toISOString().split('T')[0],
     };
+    MOCK_ROUTINES.push(routine);
+    return routine;
+  },
+  async assignToClients(routineId: string, clientIds: string[]): Promise<void> {
+    await delay(400);
+    const routine = MOCK_ROUTINES.find((r) => r.id === routineId);
+    if (routine) {
+      routine.assignedTo = Array.from(new Set([...(routine.assignedTo ?? []), ...clientIds]));
+    }
   },
 };
 

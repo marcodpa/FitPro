@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -9,11 +9,13 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppStore, useTheme } from '@/lib/store';
-import { FakeRoutineService } from '@/lib/services';
+import { FakeRoutineService, FakeUserService } from '@/lib/services';
 import { FONT, RADIUS, SPACING } from '@/lib/theme';
+import type { User } from '@/lib/types';
 import {
   ArrowLeft,
   Dumbbell,
@@ -22,7 +24,8 @@ import {
   Tag,
   Plus,
   Trash2,
-  ChevronDown,
+  Users,
+  CheckCircle2,
 } from 'lucide-react-native';
 
 type Difficulty = 'beginner' | 'intermediate' | 'advanced';
@@ -53,9 +56,24 @@ export default function CreateRoutineScreen() {
   ]);
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
-  const { user } = useAppStore();
+  const [clients, setClients] = useState<User[]>([]);
+  const [selectedClients, setSelectedClients] = useState<string[]>([]);
+  const { user, activeRole } = useAppStore();
+  const isTrainer = activeRole === 'trainer';
   const router = useRouter();
   const t = useTheme();
+
+  useEffect(() => {
+    if (isTrainer && user) {
+      FakeUserService.getTrainerClients(user.id).then(setClients);
+    }
+  }, [isTrainer, user]);
+
+  const toggleClient = (clientId: string) => {
+    setSelectedClients((prev) =>
+      prev.includes(clientId) ? prev.filter((id) => id !== clientId) : [...prev, clientId]
+    );
+  };
 
   const addExercise = () => {
     setExercises((prev) => [...prev, { name: '', sets: 3, reps: 12, rest: 60 }]);
@@ -90,8 +108,12 @@ export default function CreateRoutineScreen() {
         category,
         trainerId: user?.id ?? 't1',
         userId: user?.id,
+        assignedTo: selectedClients,
       });
-      Alert.alert('¡Rutina creada!', 'Tu rutina fue creada exitosamente.', [
+      const msg = selectedClients.length > 0
+        ? `Rutina creada y asignada a ${selectedClients.length} cliente(s).`
+        : 'Tu rutina fue creada exitosamente.';
+      Alert.alert('¡Rutina creada!', msg, [
         { text: 'OK', onPress: () => router.back() },
       ]);
     } catch (e: any) {
@@ -471,6 +493,76 @@ export default function CreateRoutineScreen() {
             </View>
           ))}
         </View>
+
+        {/* Assign to clients — trainer only */}
+        {isTrainer && clients.length > 0 && (
+          <View
+            style={{
+              backgroundColor: t.bg.card,
+              borderRadius: RADIUS.xl,
+              padding: SPACING.lg,
+              borderWidth: 1,
+              borderColor: t.border.subtle,
+              marginBottom: SPACING.md,
+              gap: SPACING.md,
+            }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.xs }}>
+              <Users size={13} color={t.text.secondary} />
+              <Text style={{ color: t.text.secondary, fontWeight: '700', fontSize: FONT.sm, letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                Asignar a clientes
+              </Text>
+              {selectedClients.length > 0 && (
+                <View style={{ marginLeft: 'auto', backgroundColor: t.accentDim, borderRadius: RADIUS.full, paddingHorizontal: 9, paddingVertical: 2, borderWidth: 1, borderColor: t.accent }}>
+                  <Text style={{ color: t.accent, fontSize: FONT.xs, fontWeight: '800' }}>{selectedClients.length}</Text>
+                </View>
+              )}
+            </View>
+            <Text style={{ color: t.text.tertiary, fontSize: FONT.xs }}>
+              Selecciona los clientes que recibirán esta rutina.
+            </Text>
+            {clients.map((client) => {
+              const selected = selectedClients.includes(client.id);
+              return (
+                <TouchableOpacity
+                  key={client.id}
+                  onPress={() => toggleClient(client.id)}
+                  activeOpacity={0.8}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: SPACING.md,
+                    padding: SPACING.md,
+                    borderRadius: RADIUS.lg,
+                    backgroundColor: selected ? t.accentDim : t.bg.elevated,
+                    borderWidth: 1.5,
+                    borderColor: selected ? t.accent : t.border.default,
+                  }}>
+                  <Image
+                    source={{ uri: client.avatar }}
+                    style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: t.bg.tertiary }}
+                  />
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: t.text.primary, fontWeight: '700', fontSize: FONT.sm }}>{client.name}</Text>
+                    <Text style={{ color: t.text.tertiary, fontSize: FONT.xs }}>{client.goal ?? client.email}</Text>
+                  </View>
+                  <View
+                    style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: 12,
+                      backgroundColor: selected ? t.accent : t.bg.tertiary,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderWidth: selected ? 0 : 1,
+                      borderColor: t.border.strong,
+                    }}>
+                    {selected && <CheckCircle2 size={14} color={t.accentText} strokeWidth={2.5} />}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
 
         <View style={{ height: 40 }} />
       </ScrollView>

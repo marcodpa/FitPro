@@ -210,7 +210,7 @@ export default function RoutinesTab() {
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
           <View style={{ gap: 4 }}>
             <Text style={{ color: t.text.secondary, fontSize: FONT.sm, fontWeight: '500' }}>
-              {isTrainer ? 'Tus programas' : 'Tu plan de entrenamiento'}
+              {isTrainer ? 'Tus programas' : 'Rutinas de tu entrenador'}
             </Text>
             <Text style={{ color: t.text.primary, fontSize: 30, fontWeight: '800', letterSpacing: -1 }}>Rutinas</Text>
           </View>
