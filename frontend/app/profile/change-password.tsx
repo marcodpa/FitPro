@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/lib/store';
+import { FakeUserService } from '@/lib/services';
 import { FONT, RADIUS, SPACING } from '@/lib/theme';
 import { ArrowLeft, Lock, Eye, EyeOff, ShieldCheck, CheckCircle2 } from 'lucide-react-native';
 
@@ -158,14 +159,18 @@ export default function ChangePasswordScreen() {
   const handleSave = async () => {
     if (!isValid) return;
     setLoading(true);
-    // Simulate API call
-    await new Promise((r) => setTimeout(r, 1200));
-    setLoading(false);
-    Alert.alert(
-      '¡Contraseña actualizada!',
-      'Tu contraseña fue cambiada exitosamente.',
-      [{ text: 'OK', onPress: () => router.back() }]
-    );
+    try {
+      await FakeUserService.changePassword(currentPassword, newPassword);
+      Alert.alert(
+        '¡Contraseña actualizada!',
+        'Tu contraseña fue cambiada exitosamente.',
+        [{ text: 'OK', onPress: () => router.back() }]
+      );
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? 'No se pudo cambiar la contraseña. Verifica tu contraseña actual.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

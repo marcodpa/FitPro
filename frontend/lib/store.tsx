@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { User, UserRole } from './types';
 import { getTheme, type Theme } from './theme';
+import { TokenStorage } from './api';
 
 const STORAGE_KEYS = {
   USER: '@fitpro:user',
@@ -66,7 +67,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (storedUser) setUser(JSON.parse(storedUser));
         if (storedToken) {
           setToken(storedToken);
-          // Sync to TokenStorage so api.ts can read it
+          // Sincroniza con TokenStorage para que api.ts pueda leerlo
           await AsyncStorage.setItem('access_token', storedToken);
         }
         if (storedOnboarded === 'true') setIsOnboarded(true);
@@ -86,8 +87,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setToken(t);
     AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(u));
     AsyncStorage.setItem(STORAGE_KEYS.TOKEN, t);
-    // Keep TokenStorage (access_token key) in sync for api.ts
-    AsyncStorage.setItem('access_token', t);
   }, []);
 
   const logout = useCallback(async () => {
@@ -96,7 +95,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await Promise.all([
       AsyncStorage.removeItem(STORAGE_KEYS.USER),
       AsyncStorage.removeItem(STORAGE_KEYS.TOKEN),
-      AsyncStorage.removeItem('access_token'),
+      TokenStorage.clear(),
     ]);
   }, []);
 
