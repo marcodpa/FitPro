@@ -167,10 +167,27 @@ export const FakeAuthService = {
     await TokenStorage.set(data.access, data.refresh);
     return { user: mapUser(data.user), token: data.access };
   },
-  async register(payload: Partial<User> & { password: string }): Promise<{ user: User; token: string }> {
+  async register(
+    nameOrPayload: string | (Partial<User> & { password: string }),
+    email?: string,
+    password?: string,
+    role?: string,
+  ): Promise<{ user: User; token: string }> {
+    let body: any;
+    if (typeof nameOrPayload === 'string') {
+      body = { name: nameOrPayload, email, password, password2: password, role: role ?? 'client' };
+    } else {
+      body = {
+        name: nameOrPayload.name,
+        email: nameOrPayload.email,
+        password: nameOrPayload.password,
+        password2: nameOrPayload.password,
+        role: nameOrPayload.role ?? 'client',
+      };
+    }
     const data = await api<any>('/auth/register/', {
       method: 'POST',
-      body: JSON.stringify({ email: payload.email, password: payload.password, name: payload.name, role: payload.role ?? 'client' }),
+      body: JSON.stringify(body),
       skipAuth: true,
     });
     await TokenStorage.set(data.access, data.refresh);

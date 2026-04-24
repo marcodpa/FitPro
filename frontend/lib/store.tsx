@@ -87,6 +87,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setToken(t);
     AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(u));
     AsyncStorage.setItem(STORAGE_KEYS.TOKEN, t);
+    AsyncStorage.setItem('access_token', t);
   }, []);
 
   const logout = useCallback(async () => {
