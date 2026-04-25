@@ -113,6 +113,7 @@ export default function ChatDetailScreen() {
   const RoleIcon  = isTrainer ? Dumbbell : User;
 
   return (
+    <>
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={{ flex: 1, backgroundColor: t.bg.primary }}>
@@ -341,5 +342,6 @@ export default function ChatDetailScreen() {
           </View>
         </View>
       </Modal>
+    </>
   );
 }
