@@ -1,23 +1,162 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StatusBar,
-  Animated,
-  Easing,
+  View, Text, TouchableOpacity, ScrollView, StatusBar, Animated, Easing, TextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/lib/store';
 import { FONT, RADIUS, SPACING } from '@/lib/theme';
-import { ChevronLeft, Play, Pause, RotateCcw, Flag, Clock } from 'lucide-react-native';
+import { ChevronLeft, Play, Pause, RotateCcw, Flag, Clock, Zap, Timer } from 'lucide-react-native';
 
 function pad(n: number) { return String(n).padStart(2, '0'); }
 
+// ─── Interval Timer ────────────────────────────────────────────────────────────
+function IntervalTimer({ t }: { t: any }) {
+  const [workSecs, setWorkSecs]   = useState(40);
+  const [restSecs, setRestSecs]   = useState(20);
+  const [rounds,   setRounds]     = useState(8);
+  const [phase,    setPhase]      = useState<'work' | 'rest' | 'idle' | 'done'>('idle');
+  const [current,  setCurrent]    = useState(0);   // current round (1-indexed)
+  const [timeLeft, setTimeLeft]   = useState(0);
+  const [running,  setRunning]    = useState(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pulseAnim   = useRef(new Animated.Value(1)).current;
+
+  const totalTime = rounds * (workSecs + restSecs);
+  const elapsed   = current > 1
+    ? (current - 1) * (workSecs + restSecs) + (phase === 'rest' ? workSecs : 0) + (phase === 'work' ? workSecs - timeLeft : restSecs - timeLeft)
+    : phase === 'work' ? workSecs - timeLeft : 0;
+  const progress  = phase === 'idle' || phase === 'done' ? 0 : timeLeft / (phase === 'work' ? workSecs : restSecs);
+
+  useEffect(() => {
+    if (running) {
+      Animated.loop(Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1.05, duration: 600, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1,    duration: 600, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ])).start();
+    } else { pulseAnim.setValue(1); }
+  }, [running]);
+
+  useEffect(() => {
+    if (!running) { if (intervalRef.current) clearInterval(intervalRef.current); return; }
+    intervalRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          setPhase((p) => {
+            if (p === 'work') { setTimeLeft(restSecs); return 'rest'; }
+            // rest finished
+            setCurrent((c) => {
+              if (c >= rounds) { setRunning(false); setPhase('done'); return c; }
+              setTimeLeft(workSecs);
+              return c + 1;
+            });
+            return 'work';
+          });
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, [running, workSecs, restSecs, rounds]);
+
+  const start = () => {
+    if (phase === 'idle' || phase === 'done') {
+      setCurrent(1); setPhase('work'); setTimeLeft(workSecs);
+    }
+    setRunning(true);
+  };
+  const pause  = () => setRunning(false);
+  const reset  = () => { setRunning(false); setPhase('idle'); setCurrent(0); setTimeLeft(0); };
+
+  const phaseColor = phase === 'work' ? t.danger : phase === 'rest' ? t.success : t.accent;
+  const phaseLabel = phase === 'work' ? 'TRABAJA' : phase === 'rest' ? 'DESCANSA' : phase === 'done' ? '¡COMPLETADO!' : 'LISTO';
+
+  return (
+    <View style={{ gap: SPACING.xl }}>
+      {/* Config — only when idle */}
+      {(phase === 'idle' || phase === 'done') && (
+        <View style={{ backgroundColor: t.bg.card, borderRadius: RADIUS.xl, padding: SPACING.lg, borderWidth: 1, borderColor: t.border.subtle, gap: SPACING.md }}>
+          <Text style={{ color: t.text.primary, fontWeight: '800', fontSize: FONT.base }}>Configurar intervalos</Text>
+          {[
+            { label: 'Trabajo (seg)', value: workSecs, set: setWorkSecs },
+            { label: 'Descanso (seg)', value: restSecs, set: setRestSecs },
+            { label: 'Rondas', value: rounds, set: setRounds },
+          ].map((row) => (
+            <View key={row.label} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={{ color: t.text.secondary, fontSize: FONT.sm }}>{row.label}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.sm }}>
+                <TouchableOpacity onPress={() => row.set((v) => Math.max(5, v - (row.label === 'Rondas' ? 1 : 5)))}
+                  style={{ width: 32, height: 32, borderRadius: RADIUS.md, backgroundColor: t.bg.elevated, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: t.border.default }}>
+                  <Text style={{ color: t.text.primary, fontWeight: '800', fontSize: FONT.lg }}>−</Text>
+                </TouchableOpacity>
+                <Text style={{ color: t.text.primary, fontWeight: '800', fontSize: FONT.lg, minWidth: 36, textAlign: 'center' }}>{row.value}</Text>
+                <TouchableOpacity onPress={() => row.set((v) => v + (row.label === 'Rondas' ? 1 : 5))}
+                  style={{ width: 32, height: 32, borderRadius: RADIUS.md, backgroundColor: t.bg.elevated, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: t.border.default }}>
+                  <Text style={{ color: t.text.primary, fontWeight: '800', fontSize: FONT.lg }}>+</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))}
+          <Text style={{ color: t.text.tertiary, fontSize: FONT.xs, textAlign: 'center', marginTop: 4 }}>
+            Total: {Math.floor(totalTime / 60)}:{pad(totalTime % 60)} min
+          </Text>
+        </View>
+      )}
+
+      {/* Main display */}
+      <View style={{ alignItems: 'center', gap: SPACING.lg }}>
+        <Animated.View style={{
+          transform: [{ scale: pulseAnim }],
+          width: 240, height: 240, borderRadius: 120,
+          backgroundColor: running ? phaseColor + '15' : t.bg.card,
+          borderWidth: 8, borderColor: running ? phaseColor + '50' : t.border.default,
+          alignItems: 'center', justifyContent: 'center', gap: 4,
+        }}>
+          <Text style={{ color: phaseColor, fontWeight: '800', fontSize: FONT.xs, letterSpacing: 2 }}>{phaseLabel}</Text>
+          <Text style={{ color: running ? phaseColor : t.text.primary, fontWeight: '800', fontSize: 68, letterSpacing: -2, fontVariant: ['tabular-nums'] }}>
+            {phase === 'idle' || phase === 'done' ? '—' : pad(Math.floor(timeLeft / 60)) + ':' + pad(timeLeft % 60)}
+          </Text>
+          {phase !== 'idle' && phase !== 'done' && (
+            <Text style={{ color: t.text.tertiary, fontSize: FONT.sm }}>
+              Ronda {current} / {rounds}
+            </Text>
+          )}
+        </Animated.View>
+
+        {/* Progress dots */}
+        {rounds <= 20 && (phase === 'work' || phase === 'rest') && (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6, maxWidth: 260 }}>
+            {Array.from({ length: rounds }).map((_, i) => (
+              <View key={i} style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: i < current - 1 ? t.success : i === current - 1 ? phaseColor : t.border.strong }} />
+            ))}
+          </View>
+        )}
+      </View>
+
+      {/* Controls */}
+      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 20 }}>
+        <TouchableOpacity onPress={reset} style={{ width: 70, height: 70, borderRadius: 35, backgroundColor: t.bg.card, borderWidth: 2, borderColor: t.border.default, alignItems: 'center', justifyContent: 'center', gap: 3 }}>
+          <RotateCcw size={18} color={t.text.secondary} strokeWidth={2} />
+          <Text style={{ color: t.text.secondary, fontSize: 10, fontWeight: '700' }}>Reset</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={running ? pause : start}
+          style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: running ? t.danger : t.accent, alignItems: 'center', justifyContent: 'center', elevation: 10 }}>
+          {running ? <Pause size={34} color="#fff" strokeWidth={2.5} /> : <Play size={34} color="#fff" strokeWidth={2.5} />}
+        </TouchableOpacity>
+        <View style={{ width: 70 }} />
+      </View>
+    </View>
+  );
+}
+
+// ─── Main Screen ───────────────────────────────────────────────────────────────
 export default function TimerScreen() {
   const router = useRouter();
   const t = useTheme();
+  const [tab, setTab] = useState<'stopwatch' | 'interval'>('stopwatch');
+
+  // Stopwatch state
   const [running, setRunning] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [laps, setLaps] = useState<number[]>([]);
@@ -80,14 +219,26 @@ export default function TimerScreen() {
       <View style={{ paddingTop: 60, paddingBottom: SPACING.lg, paddingHorizontal: SPACING.xxl, borderBottomWidth: 1, borderBottomColor: t.border.subtle }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <View style={{ gap: 4 }}>
-            <Text style={{ color: t.text.secondary, fontSize: FONT.sm, fontWeight: '500' }}>Fitness</Text>
-            <Text style={{ color: t.text.primary, fontSize: 30, fontWeight: '800', letterSpacing: -1 }}>Cronómetro</Text>
+            <Text style={{ color: t.text.secondary, fontSize: FONT.sm, fontWeight: '500' }}>Entrenamiento</Text>
+            <Text style={{ color: t.text.primary, fontSize: 30, fontWeight: '800', letterSpacing: -1 }}>
+              {tab === 'stopwatch' ? 'Cronómetro' : 'Intervalos'}
+            </Text>
           </View>
           <TouchableOpacity
             onPress={() => router.back()}
             style={{ marginTop: 6, width: 40, height: 40, borderRadius: RADIUS.md, backgroundColor: t.bg.card, borderWidth: 1, borderColor: t.border.default, alignItems: 'center', justifyContent: 'center' }}>
             <ChevronLeft size={20} color={t.text.secondary} strokeWidth={2} />
           </TouchableOpacity>
+        </View>
+        {/* Tab switcher */}
+        <View style={{ flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.lg, backgroundColor: t.bg.elevated, borderRadius: RADIUS.lg, padding: 4 }}>
+          {([['stopwatch', 'Cronómetro', Clock], ['interval', 'Intervalos HIIT', Zap]] as const).map(([key, label, Icon]) => (
+            <TouchableOpacity key={key} onPress={() => setTab(key as any)}
+              style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 8, borderRadius: RADIUS.md, backgroundColor: tab === key ? t.accent : 'transparent' }}>
+              <Icon size={14} color={tab === key ? t.accentText : t.text.secondary} strokeWidth={2.5} />
+              <Text style={{ color: tab === key ? t.accentText : t.text.secondary, fontWeight: '700', fontSize: FONT.sm }}>{label}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
       </View>
 

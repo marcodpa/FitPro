@@ -2,16 +2,16 @@ import React, { useEffect, useState, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput,
   Image, ActivityIndicator, KeyboardAvoidingView, Platform, StatusBar,
+  Alert, Modal,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { FakeChatService } from '@/lib/services';
 import { useAppStore, useTheme } from '@/lib/store';
-import { MOCK_CONVERSATIONS } from '@/lib/mockData';
 import type { ChatMessage } from '@/lib/types';
 import { FONT, RADIUS, SPACING } from '@/lib/theme';
 import {
   ChevronLeft, Send, Dumbbell, User, MoreVertical,
-  Phone, Video, CheckCheck, Paperclip, Smile,
+  Phone, CheckCheck, Paperclip, Smile, Pencil, Trash2, X,
 } from 'lucide-react-native';
 
 function timeStr(iso: string) {
@@ -42,8 +42,16 @@ export default function ChatDetailScreen() {
   const [inputFocused, setInputFocused] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
-  const conv  = MOCK_CONVERSATIONS.find((c) => c.id === id);
-  const other = conv?.participants.find((p) => p.id !== user?.id);
+  const [conversations, setConversations] = useState<any[]>([]);
+  const [editingMsg, setEditingMsg] = useState<ChatMessage | null>(null);
+  const [editText, setEditText] = useState('');
+
+  useEffect(() => {
+    if (user) FakeChatService.getConversations(user.id).then(setConversations);
+  }, [user]);
+
+  const conv  = conversations.find((c) => c.id === id);
+  const other = conv?.participants.find((p: any) => p.id !== user?.id);
 
   useEffect(() => {
     if (!id) return;
@@ -65,6 +73,28 @@ export default function ChatDetailScreen() {
     setText('');
     setSending(false);
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+  };
+
+  const handleDeleteMsg = (msgId: string) => {
+    Alert.alert('Eliminar mensaje', '¿Seguro que quieres eliminar este mensaje?', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Eliminar', style: 'destructive', onPress: async () => {
+        try { await FakeChatService.deleteMessage(id!, msgId); } catch {}
+        setMessages((prev) => prev.filter((m) => m.id !== msgId));
+      }},
+    ]);
+  };
+
+  const handleEditMsg = async () => {
+    if (!editingMsg || !editText.trim()) return;
+    try {
+      const updated = await FakeChatService.editMessage(id!, editingMsg.id, editText.trim());
+      setMessages((prev) => prev.map((m) => m.id === editingMsg.id ? updated : m));
+    } catch {
+      setMessages((prev) => prev.map((m) => m.id === editingMsg.id ? { ...m, text: editText.trim() } : m));
+    }
+    setEditingMsg(null);
+    setEditText('');
   };
 
   if (!other || loading) {
@@ -185,7 +215,6 @@ export default function ChatDetailScreen() {
           return (
             <View key={msg.id} style={{ alignItems: isMe ? 'flex-end' : 'flex-start', marginBottom: 4 }}>
               <View style={{ flexDirection: isMe ? 'row-reverse' : 'row', alignItems: 'flex-end', gap: 8, maxWidth: '82%' }}>
-                {/* Other's avatar — only on first of group */}
                 {!isMe && (
                   <View style={{ width: 28 }}>
                     {showAvatar ? (
@@ -193,25 +222,32 @@ export default function ChatDetailScreen() {
                     ) : null}
                   </View>
                 )}
-
-                <View style={{
-                  backgroundColor: isMe ? t.accent : t.bg.card,
-                  borderRadius: 20,
-                  borderBottomRightRadius: isMe ? 4 : 20,
-                  borderBottomLeftRadius: isMe ? 20 : 4,
-                  paddingHorizontal: SPACING.lg,
-                  paddingVertical: 10,
-                  borderWidth: isMe ? 0 : 1,
-                  borderColor: t.border.subtle,
-                  maxWidth: '100%',
-                }}>
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onLongPress={() => {
+                    if (!isMe) return;
+                    Alert.alert('Mensaje', '', [
+                      { text: 'Editar', onPress: () => { setEditingMsg(msg); setEditText(msg.text); } },
+                      { text: 'Eliminar', style: 'destructive', onPress: () => handleDeleteMsg(msg.id) },
+                      { text: 'Cancelar', style: 'cancel' },
+                    ]);
+                  }}
+                  style={{
+                    backgroundColor: isMe ? t.accent : t.bg.card,
+                    borderRadius: 20,
+                    borderBottomRightRadius: isMe ? 4 : 20,
+                    borderBottomLeftRadius: isMe ? 20 : 4,
+                    paddingHorizontal: SPACING.lg,
+                    paddingVertical: 10,
+                    borderWidth: isMe ? 0 : 1,
+                    borderColor: t.border.subtle,
+                    maxWidth: '100%',
+                  }}>
                   <Text style={{ color: isMe ? t.accentText : t.text.primary, fontSize: FONT.base, lineHeight: 22 }}>
                     {msg.text}
                   </Text>
-                </View>
+                </TouchableOpacity>
               </View>
-
-              {/* Time + read */}
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3, marginHorizontal: 40, alignSelf: isMe ? 'flex-end' : 'flex-start' }}>
                 <Text style={{ color: t.text.tertiary, fontSize: 10 }}>{timeStr(msg.sentAt)}</Text>
                 {isMe && <CheckCheck size={12} color={t.accent} strokeWidth={2} />}
@@ -274,5 +310,36 @@ export default function ChatDetailScreen() {
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
+
+      {/* Edit message modal */}
+      <Modal visible={!!editingMsg} transparent animationType="slide" onRequestClose={() => setEditingMsg(null)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: t.bg.secondary, borderTopLeftRadius: RADIUS.xxl, borderTopRightRadius: RADIUS.xxl, padding: SPACING.xxl, paddingBottom: 48, gap: SPACING.lg }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.sm }}>
+                <Pencil size={16} color={t.accent} />
+                <Text style={{ color: t.text.primary, fontWeight: '800', fontSize: FONT.lg }}>Editar mensaje</Text>
+              </View>
+              <TouchableOpacity onPress={() => setEditingMsg(null)}>
+                <X size={20} color={t.text.secondary} />
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              value={editText}
+              onChangeText={setEditText}
+              multiline
+              autoFocus
+              style={{ backgroundColor: t.bg.elevated, color: t.text.primary, borderRadius: RADIUS.lg, padding: SPACING.lg, fontSize: FONT.base, lineHeight: 22, minHeight: 80, borderWidth: 1.5, borderColor: t.accent, textAlignVertical: 'top' }}
+              placeholderTextColor={t.text.tertiary}
+            />
+            <TouchableOpacity
+              onPress={handleEditMsg}
+              disabled={!editText.trim()}
+              style={{ backgroundColor: editText.trim() ? t.accent : t.bg.elevated, borderRadius: RADIUS.xl, paddingVertical: 14, alignItems: 'center' }}>
+              <Text style={{ color: editText.trim() ? t.accentText : t.text.tertiary, fontWeight: '800', fontSize: FONT.base }}>Guardar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
   );
 }

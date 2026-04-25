@@ -345,6 +345,13 @@ export const FakeChatService = {
     });
     return mapMessage(d);
   },
+  async editMessage(conversationId: string, messageId: string, text: string): Promise<ChatMessage> {
+    const d = await apiPatch<any>(`/chat/${conversationId}/messages/${messageId}/`, { text });
+    return mapMessage(d);
+  },
+  async deleteMessage(conversationId: string, messageId: string): Promise<void> {
+    await apiDelete(`/chat/${conversationId}/messages/${messageId}/`);
+  },
   async createConversation(participantId: string): Promise<Conversation> {
     const d = await apiPost<any>('/chat/', { participants: [participantId] });
     return mapConversation(d);
@@ -368,6 +375,13 @@ export const FakeSocialService = {
   async toggleLike(postId: string, _userId: string): Promise<Post> {
     const d = await apiPost<any>(`/social/${postId}/like/`);
     return mapPost(d);
+  },
+  async updatePost(postId: string, data: { text: string }): Promise<Post> {
+    const d = await apiPatch<any>(`/social/${postId}/`, { text: data.text });
+    return mapPost(d);
+  },
+  async deletePost(postId: string): Promise<void> {
+    await apiDelete(`/social/${postId}/`);
   },
   async addComment(postId: string, data: Omit<Comment, 'id' | 'createdAt'>): Promise<Comment> {
     const d = await apiPost<any>(`/social/${postId}/comment/`, { text: data.text });
