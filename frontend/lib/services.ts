@@ -247,6 +247,20 @@ export const FakeUserService = {
     const d = await apiGet<any>(`/users/?search=${encodeURIComponent(query)}`);
     return results(d, mapUser);
   },
+  async follow(userId: string): Promise<{ following: boolean; followers_count: number }> {
+    return apiPost(`/users/${userId}/follow/`);
+  },
+  async getFollowing(): Promise<User[]> {
+    const d = await apiGet<any>('/users/following/');
+    return results(d, mapUser);
+  },
+  async approveTrainer(userId: string): Promise<User> {
+    const d = await apiPost<any>(`/users/${userId}/approve-trainer/`);
+    return mapUser(d);
+  },
+  async rejectTrainer(userId: string): Promise<void> {
+    await apiPost(`/users/${userId}/reject-trainer/`);
+  },
 };
 
 // ─── ROUTINE SERVICE ──────────────────────────────────────────────────────────
@@ -314,6 +328,10 @@ export const FakeWorkoutService = {
     const d = await apiPost<any>('/workouts/', { routine: routineId });
     return mapSession(d);
   },
+  async schedule(routineId: string, date: string): Promise<WorkoutSession> {
+    const d = await apiPost<any>('/workouts/', { routine: routineId, date });
+    return mapSession(d);
+  },
 };
 
 // ─── EXERCISE SERVICE ─────────────────────────────────────────────────────────
@@ -342,6 +360,18 @@ export const FakeExerciseService = {
       instructions: data.instructions ?? [],
     };
     const d = await apiPost<any>('/exercises/', body);
+    return mapExercise(d);
+  },
+  async update(id: string, data: Partial<Exercise>): Promise<Exercise> {
+    const body: any = {};
+    if (data.name !== undefined)         body.name         = data.name;
+    if (data.description !== undefined)  body.description  = data.description;
+    if (data.category !== undefined)     body.category     = data.category;
+    if (data.muscle !== undefined)       body.muscle       = data.muscle;
+    if (data.difficulty !== undefined)   body.difficulty   = data.difficulty;
+    if (data.imageUrl !== undefined)     body.image_url    = data.imageUrl;
+    if (data.instructions !== undefined) body.instructions = data.instructions;
+    const d = await apiPatch<any>(`/exercises/${id}/`, body);
     return mapExercise(d);
   },
   async delete(id: string): Promise<void> {
@@ -452,6 +482,18 @@ export const FakePaymentService = {
   async validatePayment(id: string): Promise<Payment> {
     const d = await apiPost<any>(`/payments/payments/${id}/validate/`);
     return mapPayment(d);
+  },
+  async rejectPayment(id: string, notes?: string): Promise<Payment> {
+    const d = await apiPost<any>(`/payments/payments/${id}/reject/`, { notes });
+    return mapPayment(d);
+  },
+  async uploadReceipt(id: string, receiptUrl: string): Promise<Payment> {
+    const d = await apiPost<any>(`/payments/payments/${id}/upload-receipt/`, { receipt_url: receiptUrl });
+    return mapPayment(d);
+  },
+  async scheduleWorkout(routineId: string, date: string): Promise<WorkoutSession> {
+    const d = await apiPost<any>('/workouts/', { routine: routineId, date });
+    return mapSession(d);
   },
 };
 

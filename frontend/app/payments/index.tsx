@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Alert,
   TextInput,
+  Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppStore, useTheme } from '@/lib/store';
@@ -23,6 +24,8 @@ import {
   Star,
   Check,
   ChevronRight,
+  Upload,
+  Paperclip,
 } from 'lucide-react-native';
 
 const STATUS_CONFIG = {
@@ -62,6 +65,9 @@ export default function PaymentsScreen() {
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [focusAmount, setFocusAmount] = useState(false);
+  const [receiptModal, setReceiptModal] = useState<string | null>(null); // payment id
+  const [receiptUrl, setReceiptUrl] = useState('');
+  const [uploadingReceipt, setUploadingReceipt] = useState(false);
   const router = useRouter();
   const t = useTheme();
 
@@ -96,6 +102,25 @@ export default function PaymentsScreen() {
       Alert.alert('Enviado', 'Tu pago fue registrado y está pendiente de validación.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleUploadReceipt = async () => {
+    if (!receiptModal || !receiptUrl.trim()) {
+      Alert.alert('Error', 'Ingresa una URL de comprobante válida.');
+      return;
+    }
+    setUploadingReceipt(true);
+    try {
+      const updated = await FakePaymentService.uploadReceipt(receiptModal, receiptUrl.trim());
+      setPayments((prev) => prev.map((p) => (p.id === receiptModal ? updated : p)));
+      setReceiptModal(null);
+      setReceiptUrl('');
+      Alert.alert('Enviado', 'Comprobante enviado. El administrador lo revisará pronto.');
+    } catch {
+      Alert.alert('Error', 'No se pudo subir el comprobante.');
+    } finally {
+      setUploadingReceipt(false);
     }
   };
 
@@ -348,6 +373,27 @@ export default function PaymentsScreen() {
                             </Text>
                           </TouchableOpacity>
                         </View>
+                      )}
+                      {activeRole !== 'admin' && p.status === 'pending' && (
+                        <TouchableOpacity
+                          onPress={() => { setReceiptModal(p.id); setReceiptUrl(''); }}
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 6,
+                            backgroundColor: t.infoDim,
+                            borderRadius: RADIUS.md,
+                            paddingVertical: SPACING.sm,
+                            marginTop: SPACING.sm,
+                            borderWidth: 1,
+                            borderColor: t.info,
+                          }}>
+                          <Paperclip size={14} color={t.info} />
+                          <Text style={{ color: t.info, fontWeight: '700', fontSize: FONT.sm }}>
+                            Subir Comprobante
+                          </Text>
+                        </TouchableOpacity>
                       )}
                     </View>
                   );
@@ -654,6 +700,76 @@ export default function PaymentsScreen() {
           <View style={{ height: 40 }} />
         </ScrollView>
       )}
+
+      {/* Receipt Upload Modal */}
+      <Modal visible={!!receiptModal} transparent animationType="slide" onRequestClose={() => setReceiptModal(null)}>
+        <TouchableOpacity
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' }}
+          activeOpacity={1}
+          onPress={() => setReceiptModal(null)}>
+          <View style={{ flex: 1 }} />
+        </TouchableOpacity>
+        <View style={{
+          backgroundColor: t.bg.secondary,
+          borderTopLeftRadius: RADIUS.xxl,
+          borderTopRightRadius: RADIUS.xxl,
+          padding: SPACING.xxl,
+          paddingBottom: 40,
+          borderTopWidth: 1,
+          borderTopColor: t.border.subtle,
+        }}>
+          <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: t.border.strong, alignSelf: 'center', marginBottom: SPACING.xl }} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.md, marginBottom: SPACING.xl }}>
+            <View style={{ width: 42, height: 42, borderRadius: RADIUS.md, backgroundColor: t.infoDim, alignItems: 'center', justifyContent: 'center' }}>
+              <Upload size={18} color={t.info} strokeWidth={2} />
+            </View>
+            <View>
+              <Text style={{ color: t.text.primary, fontWeight: '800', fontSize: FONT.lg }}>Subir Comprobante</Text>
+              <Text style={{ color: t.text.secondary, fontSize: FONT.xs, marginTop: 2 }}>Ingresa el enlace de tu comprobante de pago</Text>
+            </View>
+          </View>
+          <Text style={{ color: t.text.secondary, fontSize: FONT.sm, fontWeight: '600', marginBottom: SPACING.xs }}>
+            URL del comprobante
+          </Text>
+          <TextInput
+            value={receiptUrl}
+            onChangeText={setReceiptUrl}
+            placeholder="https://drive.google.com/..."
+            placeholderTextColor={t.text.tertiary}
+            autoCapitalize="none"
+            keyboardType="url"
+            style={{
+              backgroundColor: t.bg.input,
+              color: t.text.primary,
+              paddingHorizontal: SPACING.lg,
+              paddingVertical: SPACING.md,
+              borderRadius: RADIUS.lg,
+              fontSize: FONT.base,
+              borderWidth: 1.5,
+              borderColor: t.border.default,
+              marginBottom: SPACING.lg,
+            }}
+          />
+          <TouchableOpacity
+            onPress={handleUploadReceipt}
+            disabled={uploadingReceipt || !receiptUrl.trim()}
+            style={{
+              backgroundColor: receiptUrl.trim() ? t.info : t.bg.elevated,
+              borderRadius: RADIUS.xl,
+              paddingVertical: SPACING.lg,
+              alignItems: 'center',
+              opacity: uploadingReceipt ? 0.7 : 1,
+            }}>
+            {uploadingReceipt ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={{ color: receiptUrl.trim() ? '#fff' : t.text.tertiary, fontWeight: '800', fontSize: FONT.base }}>
+                Enviar Comprobante
+              </Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </View>
   );
 }

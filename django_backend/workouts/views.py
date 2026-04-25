@@ -18,7 +18,9 @@ class WorkoutSessionViewSet(viewsets.ModelViewSet):
         return WorkoutSession.objects.filter(user=user)
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user, date=timezone.now().date())
+        date_str = self.request.data.get('date')
+        date = timezone.datetime.strptime(date_str, '%Y-%m-%d').date() if date_str else timezone.now().date()
+        serializer.save(user=self.request.user, date=date)
 
     @action(detail=True, methods=['post'], url_path='complete')
     def complete(self, request, pk=None):

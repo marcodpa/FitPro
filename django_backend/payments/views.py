@@ -33,6 +33,16 @@ class PaymentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+    @action(detail=True, methods=['post'], url_path='upload-receipt')
+    def upload_receipt(self, request, pk=None):
+        payment = self.get_object()
+        if payment.user != request.user:
+            return Response({'detail': 'No autorizado.'}, status=403)
+        receipt_url = request.data.get('receipt_url', '')
+        payment.notes = f'receipt:{receipt_url}'
+        payment.save()
+        return Response(PaymentSerializer(payment).data)
+
     @action(detail=True, methods=['post'], url_path='validate', permission_classes=[IsAdmin])
     def validate_payment(self, request, pk=None):
         payment = self.get_object()

@@ -55,3 +55,43 @@ class UserViewSet(viewsets.ModelViewSet):
         request.user.set_password(ser.validated_data['new_password'])
         request.user.save()
         return Response({'detail': 'Contraseña actualizada.'})
+
+    @action(detail=True, methods=['post'], url_path='follow')
+    def follow(self, request, pk=None):
+        target = self.get_object()
+        if target == request.user:
+            return Response({'detail': 'No puedes seguirte a ti mismo.'}, status=400)
+        if request.user.following.filter(pk=target.pk).exists():
+            request.user.following.remove(target)
+            following = False
+        else:
+            request.user.following.add(target)
+            following = True
+        return Response({
+            'following': following,
+            'followers_count': target.followers.count(),
+        })
+
+    @action(detail=True, methods=['post'], url_path='approve-trainer')
+    def approve_trainer(self, request, pk=None):
+        if request.user.role != 'admin':
+            return Response({'detail': 'Solo admins.'}, status=403)
+        user = self.get_object()
+        user.role = 'trainer'
+        user.save()
+        return Response(UserSerializer(user).data)
+
+    @action(detail=True, methods=['post'], url_path='reject-trainer')
+    def reject_trainer(self, request, pk=None):
+        if request.user.role != 'admin':
+            return Response({'detail': 'Solo admins.'}, status=403)
+        # Just acknowledge — user stays as client
+        return Response({'detail': 'Solicitud rechazada.'})
+
+    @action(detail=False, methods=['get'], url_path='following')
+    def get_following(self, request):
+        return Response(UserSerializer(request.user.following.all(), many=True).data)
+
+    @action(detail=False, methods=['get'], url_path='followers')
+    def get_followers(self, request):
+        return Response(UserSerializer(request.user.followers.all(), many=True).data)

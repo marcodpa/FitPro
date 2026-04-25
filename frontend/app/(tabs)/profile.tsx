@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppStore, useTheme } from '@/lib/store';
+import { FakeUserService } from '@/lib/services';
 import type { UserRole } from '@/lib/types';
 import {
   Pencil,
@@ -180,14 +181,31 @@ export default function ProfileTab() {
   const handleApproveRequest = (id: string, name: string) => {
     Alert.alert(`Aprobar a ${name}`, '¿Confirmar como Entrenador?', [
       { text: 'Cancelar', style: 'cancel' },
-      { text: 'Aprobar', onPress: () => setPendingRequests((r) => r.filter((x) => x.id !== id)) },
+      {
+        text: 'Aprobar',
+        onPress: async () => {
+          try {
+            await FakeUserService.approveTrainer(id);
+          } catch {}
+          setPendingRequests((r) => r.filter((x) => x.id !== id));
+        },
+      },
     ]);
   };
 
   const handleRejectRequest = (id: string, name: string) => {
     Alert.alert(`Rechazar a ${name}`, '¿Rechazar esta solicitud?', [
       { text: 'Cancelar', style: 'cancel' },
-      { text: 'Rechazar', style: 'destructive', onPress: () => setPendingRequests((r) => r.filter((x) => x.id !== id)) },
+      {
+        text: 'Rechazar',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await FakeUserService.rejectTrainer(id);
+          } catch {}
+          setPendingRequests((r) => r.filter((x) => x.id !== id));
+        },
+      },
     ]);
   };
 
@@ -497,8 +515,9 @@ export default function ProfileTab() {
           <MenuRow icon={<BookOpen     size={17} color={t.warning}  />} label="Biblioteca Ejercicios"   onPress={() => router.push('/exercises' as any)} />
           <MenuRow icon={<Zap          size={17} color="#f97316"    />} label="Historial Entrenamientos" onPress={() => router.push('/workout/history' as any)} />
           <MenuRow icon={<Bell         size={17} color="#22c55e"    />} label="Nutrición"                onPress={() => router.push('/nutrition' as any)} />
+          <MenuRow icon={<User         size={17} color="#6366f1"    />} label="Gráficas de Progreso"     onPress={() => router.push('/progress' as any)} />
+          <MenuRow icon={<ShieldCheck  size={17} color={t.info}     />} label="Medidas Corporales"       onPress={() => router.push('/measurements' as any)} />
           <MenuRow icon={<Lock         size={17} color="#818cf8"    />} label="Cambiar Contraseña"       onPress={() => router.push('/profile/change-password' as any)} />
-          <MenuRow icon={<ShieldCheck  size={17} color={t.text.secondary} />} label="Privacidad" />
           <MenuRow icon={<HelpCircle   size={17} color={t.text.secondary} />} label="Ayuda y Soporte" last />
         </View>
 

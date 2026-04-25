@@ -79,6 +79,31 @@ class ChangeTrainerView(APIView):
                 return Response({'detail': 'Entrenador no encontrado.'}, status=404)
         return Response({'detail': 'Solicitud de cambio de entrenador recibida. Un administrador la procesará.'})
 
+class ResetPasswordView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        # In production: validate token/uid from email link
+        # Here we accept new_password + uid for simplicity
+        uid          = request.data.get('uid')
+        new_password = request.data.get('new_password', '')
+        new_password2 = request.data.get('new_password2', '')
+
+        if not uid or not new_password:
+            return Response({'detail': 'Datos incompletos.'}, status=400)
+        if new_password != new_password2:
+            return Response({'detail': 'Las contraseñas no coinciden.'}, status=400)
+        if len(new_password) < 6:
+            return Response({'detail': 'Contraseña muy corta.'}, status=400)
+
+        try:
+            user = User.objects.get(pk=uid)
+            user.set_password(new_password)
+            user.save()
+            return Response({'detail': 'Contraseña actualizada exitosamente.'})
+        except (User.DoesNotExist, ValueError, TypeError):
+            return Response({'detail': 'Enlace inválido o expirado.'}, status=400)
+
 class BlockUserView(APIView):
     def post(self, request, pk=None):
         if not request.user.role == 'admin':

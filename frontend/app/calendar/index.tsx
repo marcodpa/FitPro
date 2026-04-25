@@ -6,12 +6,14 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Dimensions,
+  Alert,
+  Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppStore, useTheme } from '@/lib/store';
-import { FakeCalendarService } from '@/lib/services';
+import { FakeCalendarService, FakeRoutineService, FakeWorkoutService } from '@/lib/services';
 import { FONT, RADIUS, SPACING } from '@/lib/theme';
-import type { CalendarDay } from '@/lib/types';
+import type { CalendarDay, Routine } from '@/lib/types';
 import {
   ChevronLeft,
   ChevronRight,
@@ -20,6 +22,8 @@ import {
   Clock,
   XCircle,
   Flame,
+  Plus,
+  Dumbbell,
 } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
@@ -37,6 +41,9 @@ export default function CalendarScreen() {
   const [calendarDays, setCalendarDays] = useState<CalendarDay[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [routines, setRoutines] = useState<Routine[]>([]);
+  const [scheduling, setScheduling] = useState(false);
 
   const now = new Date();
   const [viewYear, setViewYear] = useState(now.getFullYear());
@@ -47,7 +54,26 @@ export default function CalendarScreen() {
     FakeCalendarService.getCalendar(user.id)
       .then(setCalendarDays)
       .finally(() => setLoading(false));
+    FakeRoutineService.getByUserId(user.id).then(setRoutines).catch(() => {});
   }, [user]);
+
+  const handleScheduleWorkout = async (routineId: string) => {
+    if (!selectedDate) return;
+    setScheduling(true);
+    try {
+      await FakeWorkoutService.schedule(routineId, selectedDate);
+      setCalendarDays((prev) => [
+        ...prev.filter((d) => d.date !== selectedDate),
+        { date: selectedDate, hasWorkout: true, status: 'planned', workoutName: routines.find((r) => r.id === routineId)?.name ?? 'Entrenamiento' },
+      ]);
+      setShowScheduleModal(false);
+      Alert.alert('Programado', `Entrenamiento agendado para ${selectedDate}.`);
+    } catch {
+      Alert.alert('Error', 'No se pudo agendar el entrenamiento.');
+    } finally {
+      setScheduling(false);
+    }
+  };
 
   const firstDay = new Date(viewYear, viewMonth, 1).getDay();
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
@@ -220,13 +246,29 @@ export default function CalendarScreen() {
                   </View>
                 );
               })() : (
-                <View style={{ alignItems: 'center', padding: 20, gap: 8 }}>
+                <View style={{ alignItems: 'center', padding: 20, gap: 12 }}>
                   <View style={{ width: 46, height: 46, borderRadius: RADIUS.lg, backgroundColor: t.bg.tertiary, alignItems: 'center', justifyContent: 'center' }}>
                     <CalendarDays size={20} color={t.text.tertiary} strokeWidth={1.5} />
                   </View>
                   <Text style={{ color: t.text.secondary, fontSize: FONT.sm, textAlign: 'center' }}>
                     Sin entrenamiento programado
                   </Text>
+                  <TouchableOpacity
+                    onPress={() => setShowScheduleModal(true)}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 6,
+                      backgroundColor: t.accentDim,
+                      borderRadius: RADIUS.lg,
+                      paddingHorizontal: SPACING.lg,
+                      paddingVertical: SPACING.sm,
+                      borderWidth: 1,
+                      borderColor: t.accent,
+                    }}>
+                    <Plus size={14} color={t.accent} strokeWidth={2.5} />
+                    <Text style={{ color: t.accent, fontWeight: '700', fontSize: FONT.sm }}>Agendar Entrenamiento</Text>
+                  </TouchableOpacity>
                 </View>
               )}
             </View>
@@ -252,6 +294,69 @@ export default function CalendarScreen() {
 
         </ScrollView>
       )}
+
+      {/* Schedule Modal */}
+      <Modal visible={showScheduleModal} transparent animationType="slide" onRequestClose={() => setShowScheduleModal(false)}>
+        <TouchableOpacity
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' }}
+          activeOpacity={1}
+          onPress={() => setShowScheduleModal(false)}>
+          <View style={{ flex: 1 }} />
+        </TouchableOpacity>
+        <View style={{
+          backgroundColor: t.bg.secondary,
+          borderTopLeftRadius: RADIUS.xxl,
+          borderTopRightRadius: RADIUS.xxl,
+          padding: SPACING.xxl,
+          paddingBottom: 40,
+          borderTopWidth: 1,
+          borderTopColor: t.border.subtle,
+          maxHeight: '70%',
+        }}>
+          <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: t.border.strong, alignSelf: 'center', marginBottom: SPACING.xl }} />
+          <Text style={{ color: t.text.primary, fontWeight: '800', fontSize: FONT.lg, marginBottom: 4 }}>
+            Agendar Entrenamiento
+          </Text>
+          <Text style={{ color: t.text.secondary, fontSize: FONT.sm, marginBottom: SPACING.xl }}>
+            {selectedDate} — Elige una rutina:
+          </Text>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {routines.length === 0 ? (
+              <View style={{ alignItems: 'center', padding: SPACING.xl }}>
+                <Text style={{ color: t.text.secondary, fontSize: FONT.sm }}>No tienes rutinas disponibles.</Text>
+              </View>
+            ) : (
+              routines.map((r) => (
+                <TouchableOpacity
+                  key={r.id}
+                  onPress={() => handleScheduleWorkout(r.id)}
+                  disabled={scheduling}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: SPACING.md,
+                    backgroundColor: t.bg.card,
+                    borderRadius: RADIUS.xl,
+                    padding: SPACING.lg,
+                    marginBottom: SPACING.sm,
+                    borderWidth: 1,
+                    borderColor: t.border.subtle,
+                    opacity: scheduling ? 0.6 : 1,
+                  }}>
+                  <View style={{ width: 42, height: 42, borderRadius: RADIUS.md, backgroundColor: t.accentDim, alignItems: 'center', justifyContent: 'center' }}>
+                    <Dumbbell size={18} color={t.accent} strokeWidth={2} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: t.text.primary, fontWeight: '700', fontSize: FONT.base }}>{r.name}</Text>
+                    <Text style={{ color: t.text.secondary, fontSize: FONT.xs, marginTop: 2 }}>{r.duration} min • {r.category}</Text>
+                  </View>
+                  {scheduling && <ActivityIndicator size="small" color={t.accent} />}
+                </TouchableOpacity>
+              ))
+            )}
+          </ScrollView>
+        </View>
+      </Modal>
     </View>
   );
 }

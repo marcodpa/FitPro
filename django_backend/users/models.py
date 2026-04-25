@@ -37,6 +37,10 @@ class User(AbstractBaseUser, PermissionsMixin):
         'self', null=True, blank=True, on_delete=models.SET_NULL,
         related_name='clients', limit_choices_to={'role': 'trainer'}
     )
+    following = models.ManyToManyField(
+        'self', symmetrical=False, blank=True,
+        related_name='followers'
+    )
     is_active = models.BooleanField(default=True)
     is_staff  = models.BooleanField(default=False)
     joined_at = models.DateTimeField(auto_now_add=True)

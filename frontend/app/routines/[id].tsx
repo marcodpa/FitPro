@@ -256,7 +256,7 @@ export default function RoutineDetailScreen() {
           {/* Edit (trainer only) */}
           {activeRole === 'trainer' && (
             <TouchableOpacity
-              onPress={() => router.push(`/routines/${id}/edit` as any)}
+              onPress={() => router.push(`/routines/edit/${id}` as any)}
               style={{ position: 'absolute', top: 56, right: 20, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: RADIUS.md, paddingHorizontal: 12, paddingVertical: 10 }}>
               <Edit3 size={14} color="#fff" strokeWidth={2} />
               <Text style={{ color: '#fff', fontSize: FONT.sm, fontWeight: '700' }}>Editar</Text>
