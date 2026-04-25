@@ -10,7 +10,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useTheme } from '@/lib/store';
+import { useAppStore, useTheme } from '@/lib/store';
 import { FakeExerciseService } from '@/lib/services';
 import { FONT, RADIUS, SPACING } from '@/lib/theme';
 import type { Exercise } from '@/lib/types';
@@ -26,6 +26,8 @@ import {
   ChevronRight,
   Play,
   Info,
+  Plus,
+  Trash2,
 } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
@@ -178,6 +180,8 @@ function ExerciseCard({ exercise, onPress }: { exercise: Exercise; onPress: () =
 export default function ExercisesScreen() {
   const t = useTheme();
   const router = useRouter();
+  const { activeRole } = useAppStore();
+  const isAdmin = activeRole === 'admin';
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [filtered, setFiltered] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
@@ -210,11 +214,20 @@ export default function ExercisesScreen() {
             <Text style={{ color: t.text.secondary, fontSize: FONT.sm, fontWeight: '500' }}>Explora y aprende</Text>
             <Text style={{ color: t.text.primary, fontSize: 30, fontWeight: '800', letterSpacing: -1 }}>Ejercicios</Text>
           </View>
-          <TouchableOpacity
-            onPress={() => router.back()}
-            style={{ marginTop: 6, width: 40, height: 40, borderRadius: RADIUS.md, backgroundColor: t.bg.card, borderWidth: 1, borderColor: t.border.default, alignItems: 'center', justifyContent: 'center' }}>
-            <ChevronLeft size={20} color={t.text.secondary} strokeWidth={2} />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: SPACING.sm }}>
+            {isAdmin && (
+              <TouchableOpacity
+                onPress={() => router.push('/exercises/create' as any)}
+                style={{ marginTop: 6, width: 40, height: 40, borderRadius: RADIUS.md, backgroundColor: t.accentDim, borderWidth: 1, borderColor: t.accent + '40', alignItems: 'center', justifyContent: 'center' }}>
+                <Plus size={18} color={t.accent} strokeWidth={2.5} />
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              onPress={() => router.back()}
+              style={{ marginTop: 6, width: 40, height: 40, borderRadius: RADIUS.md, backgroundColor: t.bg.card, borderWidth: 1, borderColor: t.border.default, alignItems: 'center', justifyContent: 'center' }}>
+              <ChevronLeft size={20} color={t.text.secondary} strokeWidth={2} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Search */}

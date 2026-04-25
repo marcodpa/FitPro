@@ -492,10 +492,12 @@ export default function ProfileTab() {
               </View>
             )}
           </View>
-          <MenuRow icon={<CalendarDays size={17} color={t.info}    />} label="Calendario"             onPress={() => router.push('/calendar' as any)} />
-          <MenuRow icon={<CreditCard   size={17} color={t.success} />} label="Planes y Pagos"         onPress={() => router.push('/payments' as any)} />
-          <MenuRow icon={<BookOpen     size={17} color={t.warning}  />} label="Biblioteca Ejercicios" onPress={() => router.push('/exercises' as any)} />
-          <MenuRow icon={<Lock         size={17} color="#818cf8"    />} label="Cambiar Contraseña"     onPress={() => router.push('/profile/change-password' as any)} />
+          <MenuRow icon={<CalendarDays size={17} color={t.info}    />} label="Calendario"               onPress={() => router.push('/calendar' as any)} />
+          <MenuRow icon={<CreditCard   size={17} color={t.success} />} label="Planes y Pagos"           onPress={() => router.push('/payments' as any)} />
+          <MenuRow icon={<BookOpen     size={17} color={t.warning}  />} label="Biblioteca Ejercicios"   onPress={() => router.push('/exercises' as any)} />
+          <MenuRow icon={<Zap          size={17} color="#f97316"    />} label="Historial Entrenamientos" onPress={() => router.push('/workout/history' as any)} />
+          <MenuRow icon={<Bell         size={17} color="#22c55e"    />} label="Nutrición"                onPress={() => router.push('/nutrition' as any)} />
+          <MenuRow icon={<Lock         size={17} color="#818cf8"    />} label="Cambiar Contraseña"       onPress={() => router.push('/profile/change-password' as any)} />
           <MenuRow icon={<ShieldCheck  size={17} color={t.text.secondary} />} label="Privacidad" />
           <MenuRow icon={<HelpCircle   size={17} color={t.text.secondary} />} label="Ayuda y Soporte" last />
         </View>

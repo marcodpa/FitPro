@@ -30,6 +30,8 @@ class ChatMessage(models.Model):
     routine      = models.ForeignKey('routines.Routine', null=True, blank=True, on_delete=models.SET_NULL)
     sent_at      = models.DateTimeField(auto_now_add=True)
     read_at      = models.DateTimeField(null=True, blank=True)
+    is_edited    = models.BooleanField(default=False)
+    is_deleted   = models.BooleanField(default=False)
 
     class Meta:
         app_label = 'chat'

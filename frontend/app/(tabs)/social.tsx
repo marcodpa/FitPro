@@ -9,7 +9,7 @@ import { FakeSocialService } from '@/lib/services';
 import type { Post } from '@/lib/types';
 import {
   Heart, MessageCircle, Share2, MoreHorizontal, Plus,
-  Dumbbell, User, Pencil, Trash2, Flag, X,
+  Dumbbell, User, Pencil, Trash2, Flag, X, Search,
 } from 'lucide-react-native';
 import { FONT, RADIUS, SPACING } from '@/lib/theme';
 
@@ -24,7 +24,7 @@ function timeAgo(iso: string) {
 }
 
 function PostCard({
-  post, currentUserId, onLike, onPress, onEdit, onDelete, onReport, onShare,
+  post, currentUserId, onLike, onPress, onEdit, onDelete, onReport, onShare, onAuthorPress,
 }: {
   post: Post; currentUserId: string;
   onLike: (id: string) => void;
@@ -33,6 +33,7 @@ function PostCard({
   onDelete: (id: string) => void;
   onReport: (id: string) => void;
   onShare: (post: Post) => void;
+  onAuthorPress?: (authorId: string) => void;
 }) {
   const t = useTheme();
   const liked = post.likes.includes(currentUserId);
@@ -47,11 +48,11 @@ function PostCard({
     }}>
       {/* Author row */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: SPACING.lg, paddingTop: SPACING.lg, paddingBottom: SPACING.md }}>
-        <TouchableOpacity onPress={() => onPress(post.id)}>
+        <TouchableOpacity onPress={() => onAuthorPress ? onAuthorPress(post.author.id) : onPress(post.id)}>
           <Image source={{ uri: post.author.avatar }} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: t.bg.tertiary }} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <TouchableOpacity onPress={() => onPress(post.id)}>
+          <TouchableOpacity onPress={() => onAuthorPress ? onAuthorPress(post.author.id) : onPress(post.id)}>
             <Text style={{ color: t.text.primary, fontWeight: '700', fontSize: FONT.base }}>{post.author.name}</Text>
           </TouchableOpacity>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 }}>
@@ -211,10 +212,15 @@ export default function SocialTab() {
           <Text style={{ color: t.text.secondary, fontSize: FONT.xs, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 }}>FitPro</Text>
           <Text style={{ color: t.text.primary, fontSize: FONT.xxxl, fontWeight: '800', letterSpacing: -0.5 }}>Comunidad</Text>
         </View>
-        <TouchableOpacity onPress={() => router.push('/social/create')} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: t.accent, borderRadius: RADIUS.lg, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md }}>
-          <Plus size={16} color={t.accentText} strokeWidth={2.5} />
-          <Text style={{ color: t.accentText, fontWeight: '700', fontSize: FONT.sm }}>Publicar</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: SPACING.sm }}>
+          <TouchableOpacity onPress={() => router.push('/search' as any)} style={{ width: 40, height: 40, borderRadius: RADIUS.lg, backgroundColor: t.bg.elevated, borderWidth: 1, borderColor: t.border.default, alignItems: 'center', justifyContent: 'center' }}>
+            <Search size={16} color={t.text.secondary} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/social/create')} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: t.accent, borderRadius: RADIUS.lg, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md }}>
+            <Plus size={16} color={t.accentText} strokeWidth={2.5} />
+            <Text style={{ color: t.accentText, fontWeight: '700', fontSize: FONT.sm }}>Publicar</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {loading ? (
@@ -238,6 +244,7 @@ export default function SocialTab() {
               onDelete={handleDelete}
               onReport={handleReport}
               onShare={handleShare}
+              onAuthorPress={(authorId) => router.push(`/profile/user/${authorId}` as any)}
             />
           ))}
         </ScrollView>

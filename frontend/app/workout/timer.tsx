@@ -242,7 +242,12 @@ export default function TimerScreen() {
         </View>
       </View>
 
-      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+      {tab === 'interval' && (
+        <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: SPACING.xl, paddingBottom: 40 }}>
+          <IntervalTimer t={t} />
+        </ScrollView>
+      )}
+      <ScrollView style={{ flex: 1, display: tab === 'stopwatch' ? 'flex' : 'none' }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
         {/* ── Clock display ─────────────────────────────────────────────────── */}
         <View style={{ alignItems: 'center', paddingTop: 48, paddingBottom: 40 }}>
           <Animated.View style={{

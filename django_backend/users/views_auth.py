@@ -48,3 +48,46 @@ class LogoutView(APIView):
         except Exception:
             pass
         return Response({'detail': 'Sesión cerrada.'})
+
+class ForgotPasswordView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email', '').strip().lower()
+        # In production send a real email. Here we acknowledge always (security: don't reveal if user exists)
+        try:
+            User.objects.get(email=email)
+        except User.DoesNotExist:
+            pass
+        return Response({'detail': 'Si el email existe, recibirás un enlace de recuperación.'})
+
+class ChangeTrainerView(APIView):
+    def post(self, request):
+        action_type = request.data.get('action', 'change')  # 'change' or 'cancel'
+        if action_type == 'cancel':
+            request.user.trainer = None
+            request.user.save()
+            return Response({'detail': 'Suscripción con entrenador cancelada.'})
+        new_trainer_id = request.data.get('trainer_id')
+        if new_trainer_id:
+            try:
+                trainer = User.objects.get(pk=new_trainer_id, role='trainer')
+                request.user.trainer = trainer
+                request.user.save()
+                return Response({'detail': 'Entrenador actualizado.'})
+            except User.DoesNotExist:
+                return Response({'detail': 'Entrenador no encontrado.'}, status=404)
+        return Response({'detail': 'Solicitud de cambio de entrenador recibida. Un administrador la procesará.'})
+
+class BlockUserView(APIView):
+    def post(self, request, pk=None):
+        if not request.user.role == 'admin':
+            return Response({'detail': 'Solo admins.'}, status=403)
+        try:
+            user = User.objects.get(pk=pk)
+            user.is_active = not user.is_active
+            user.save()
+            state = 'activado' if user.is_active else 'bloqueado'
+            return Response({'detail': f'Usuario {state}.', 'is_active': user.is_active})
+        except User.DoesNotExist:
+            return Response({'detail': 'No encontrado.'}, status=404)

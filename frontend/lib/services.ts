@@ -193,8 +193,8 @@ export const FakeAuthService = {
     await TokenStorage.set(data.access, data.refresh);
     return { user: mapUser(data.user), token: data.access };
   },
-  async forgotPassword(_email: string): Promise<void> {
-    // Endpoint no implementado en backend; no-op
+  async forgotPassword(email: string): Promise<void> {
+    await api('/auth/forgot-password/', { method: 'POST', body: JSON.stringify({ email }), skipAuth: true });
   },
   async logout(): Promise<void> {
     try {
@@ -236,6 +236,16 @@ export const FakeUserService = {
   },
   async changePassword(oldPassword: string, newPassword: string): Promise<void> {
     await apiPost('/users/change-password/', { old_password: oldPassword, new_password: newPassword });
+  },
+  async changeTrainer(action: 'change' | 'cancel', trainerId?: string): Promise<void> {
+    await apiPost('/auth/change-trainer/', { action, trainer_id: trainerId });
+  },
+  async blockUser(userId: string): Promise<{ is_active: boolean }> {
+    return api<any>(`/auth/block-user/${userId}/`, { method: 'POST' });
+  },
+  async searchUsers(query: string): Promise<User[]> {
+    const d = await apiGet<any>(`/users/?search=${encodeURIComponent(query)}`);
+    return results(d, mapUser);
   },
 };
 
@@ -320,6 +330,22 @@ export const FakeExerciseService = {
     const url = category === 'Todos' ? '/exercises/' : `/exercises/?category=${category}`;
     const d = await apiGet<any>(url);
     return results(d, mapExercise);
+  },
+  async create(data: Partial<Exercise>): Promise<Exercise> {
+    const body: any = {
+      name:         data.name,
+      description:  data.description ?? '',
+      category:     data.category ?? 'Fuerza',
+      muscle:       data.muscle ?? '',
+      difficulty:   data.difficulty ?? 'beginner',
+      image_url:    data.imageUrl ?? '',
+      instructions: data.instructions ?? [],
+    };
+    const d = await apiPost<any>('/exercises/', body);
+    return mapExercise(d);
+  },
+  async delete(id: string): Promise<void> {
+    await apiDelete(`/exercises/${id}/`);
   },
 };
 
