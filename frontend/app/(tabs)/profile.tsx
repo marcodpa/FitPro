@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -177,6 +177,13 @@ export default function ProfileTab() {
   const [showVoiceSheet, setShowVoiceSheet] = useState(false);
   const [trainerRequestStatus, setTrainerRequestStatus] = useState<'none' | 'pending' | 'sent'>('none');
   const [pendingRequests, setPendingRequests] = useState(PENDING_TRAINER_REQUESTS);
+  const [trainerInfo, setTrainerInfo] = useState<import('@/lib/types').User | null>(null);
+
+  // Load assigned trainer for client
+  useEffect(() => {
+    if (activeRole !== 'client' || !user?.trainerId) return;
+    FakeUserService.getById(user.trainerId).then(setTrainerInfo).catch(() => {});
+  }, [user, activeRole]);
 
   const handleApproveRequest = (id: string, name: string) => {
     Alert.alert(`Aprobar a ${name}`, '¿Confirmar como Entrenador?', [
@@ -520,6 +527,53 @@ export default function ProfileTab() {
           <MenuRow icon={<Lock         size={17} color="#818cf8"    />} label="Cambiar Contraseña"       onPress={() => router.push('/profile/change-password' as any)} />
           <MenuRow icon={<HelpCircle   size={17} color={t.text.secondary} />} label="Ayuda y Soporte" last />
         </View>
+
+        {/* Mi Entrenador — only shown to clients that have one assigned */}
+        {(activeRole === 'client' || activeRole === 'user') && trainerInfo && (
+          <>
+            <SectionHeader title="Mi Entrenador" />
+            <View style={{ paddingHorizontal: SPACING.xxl }}>
+              <TouchableOpacity
+                onPress={() => router.push(`/profile/user/${trainerInfo.id}` as any)}
+                activeOpacity={0.85}
+                style={{
+                  backgroundColor: t.bg.card, borderRadius: RADIUS.xl, padding: SPACING.lg,
+                  flexDirection: 'row', alignItems: 'center', gap: SPACING.lg,
+                  borderWidth: 1, borderColor: t.border.subtle,
+                }}>
+                <Image
+                  source={{ uri: trainerInfo.avatar }}
+                  style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: t.bg.tertiary, borderWidth: 2, borderColor: t.success }}
+                />
+                <View style={{ flex: 1, gap: 3 }}>
+                  <Text style={{ color: t.text.primary, fontWeight: '800', fontSize: FONT.base }}>{trainerInfo.name}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                    <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: t.success }} />
+                    <Text style={{ color: t.success, fontSize: FONT.xs, fontWeight: '600' }}>Entrenador activo</Text>
+                  </View>
+                  {trainerInfo.bio ? (
+                    <Text style={{ color: t.text.tertiary, fontSize: FONT.xs, marginTop: 1 }} numberOfLines={1}>{trainerInfo.bio}</Text>
+                  ) : null}
+                </View>
+                <View style={{ gap: SPACING.sm }}>
+                  <TouchableOpacity
+                    onPress={() => router.push('/chat' as any)}
+                    style={{ width: 34, height: 34, borderRadius: RADIUS.md, backgroundColor: t.accentDim, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: t.accent }}>
+                    <Send size={14} color={t.accent} strokeWidth={2} />
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => Alert.alert('Cambiar Entrenador', '¿Deseas cambiar o cancelar tu suscripción con este entrenador?', [
+                  { text: 'Cancelar', style: 'cancel' },
+                  { text: 'Cambiar', onPress: async () => { try { await FakeUserService.changeTrainer('cancel'); setTrainerInfo(null); } catch {} } },
+                ])}
+                style={{ marginTop: SPACING.sm, alignItems: 'center', paddingVertical: 10 }}>
+                <Text style={{ color: t.text.tertiary, fontSize: FONT.xs, fontWeight: '600' }}>Cambiar o cancelar entrenador</Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
 
         {/* Trainer request — only shown to clients */}
         {(activeRole === 'client' || activeRole === 'user') && (

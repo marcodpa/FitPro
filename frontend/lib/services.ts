@@ -278,9 +278,14 @@ export const FakeRoutineService = {
     const d = await apiGet<any>('/routines/');
     return results(d, mapRoutine);
   },
-  async getByTrainerId(_trainerId: string): Promise<Routine[]> {
-    const d = await apiGet<any>('/routines/mis-rutinas/');
-    return results(d, mapRoutine);
+  async getByTrainerId(trainerId: string): Promise<Routine[]> {
+    try {
+      const d = await apiGet<any>(`/routines/?trainer=${trainerId}`);
+      return results(d, mapRoutine);
+    } catch {
+      const d = await apiGet<any>('/routines/');
+      return results(d, mapRoutine);
+    }
   },
   async create(data: Partial<Routine>): Promise<Routine> {
     const body: any = {

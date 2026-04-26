@@ -63,19 +63,25 @@ export default function ForgotPasswordScreen() {
             <Text className="text-foreground font-bold text-2xl text-center mb-3">
               Email Enviado
             </Text>
-            <Text className="text-muted-foreground text-center text-base mb-10">
-              Revisa tu bandeja de entrada y sigue las instrucciones.
+            <Text className="text-muted-foreground text-center text-base mb-8">
+              Revisa tu bandeja de entrada. También puedes ingresar tu nueva contraseña directamente.
             </Text>
             <TouchableOpacity
-              onPress={() => router.replace('/auth/login')}
+              onPress={() => router.push('/auth/reset-password' as any)}
               style={{
                 backgroundColor: '#0d9e6e',
                 borderRadius: 16,
                 paddingVertical: 18,
-                paddingHorizontal: 40,
+                width: '100%',
                 alignItems: 'center',
+                marginBottom: 12,
               }}>
-              <Text className="text-white font-bold text-base">Volver al Login</Text>
+              <Text className="text-white font-bold text-base">Ingresar nueva contraseña</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => router.replace('/auth/login')}
+              style={{ paddingVertical: 12, alignItems: 'center' }}>
+              <Text className="text-muted-foreground text-base">Volver al Login</Text>
             </TouchableOpacity>
           </View>
         ) : (

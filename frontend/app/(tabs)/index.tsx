@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppStore, useTheme } from '@/lib/store';
-import { WorkoutService, CalendarService, FakePaymentService, FakeUserService } from '@/lib/services';
+import { WorkoutService, CalendarService, FakePaymentService, FakeUserService, FakeRoutineService } from '@/lib/services';
 import { FONT, RADIUS, SPACING } from '@/lib/theme';
 import type { WorkoutSession, CalendarDay, User, Payment } from '@/lib/types';
 import {
@@ -226,10 +226,7 @@ function UserDashboard() {
               <ActivityIndicator color={t.accent} size="large" />
             </View>
           ) : todayWorkout ? (
-            <TouchableOpacity
-              onPress={() => router.push(`/workout/${todayWorkout.id}` as any)}
-              activeOpacity={0.88}
-              style={{ borderRadius: RADIUS.xl, overflow: 'hidden' }}>
+            <View style={{ borderRadius: RADIUS.xl, overflow: 'hidden' }}>
               <Image source={{ uri: todayWorkout.routine.imageUrl }} style={{ width: '100%', height: 210 }} resizeMode="cover" />
               <View style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.52)' }} />
               {/* Badges */}
@@ -243,10 +240,12 @@ function UserDashboard() {
                   </Text>
                 </View>
               </View>
-              {/* Play */}
-              <View style={{ position: 'absolute', top: 14, right: 14, width: 44, height: 44, borderRadius: RADIUS.md, backgroundColor: t.accent, alignItems: 'center', justifyContent: 'center' }}>
+              {/* Play — routes to session with routineId */}
+              <TouchableOpacity
+                onPress={() => router.push({ pathname: '/workout/session', params: { routineId: todayWorkout.routine.id } } as any)}
+                style={{ position: 'absolute', top: 14, right: 14, width: 44, height: 44, borderRadius: RADIUS.md, backgroundColor: t.accent, alignItems: 'center', justifyContent: 'center' }}>
                 <Play size={18} color={t.accentText} strokeWidth={2.5} />
-              </View>
+              </TouchableOpacity>
               {/* Info */}
               <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 18, gap: 6 }}>
                 <Text style={{ color: '#fff', fontWeight: '800', fontSize: 20, letterSpacing: -0.6 }}>
@@ -261,7 +260,7 @@ function UserDashboard() {
                   </Text>
                 </View>
               </View>
-            </TouchableOpacity>
+            </View>
           ) : (
             <View
               style={{
@@ -277,6 +276,11 @@ function UserDashboard() {
               <Text style={{ color: t.text.secondary, fontSize: FONT.sm, textAlign: 'center', marginTop: 6, lineHeight: 19 }}>
                 No tienes entrenamiento programado para hoy.
               </Text>
+              <TouchableOpacity
+                onPress={() => router.push('/(tabs)/routines' as any)}
+                style={{ marginTop: 16, backgroundColor: t.accentDim, borderRadius: RADIUS.lg, paddingHorizontal: SPACING.xl, paddingVertical: SPACING.sm, borderWidth: 1, borderColor: t.accent }}>
+                <Text style={{ color: t.accent, fontWeight: '700', fontSize: FONT.sm }}>Ver mis rutinas</Text>
+              </TouchableOpacity>
             </View>
           )}
         </View>
@@ -457,25 +461,42 @@ function TrainerDashboard() {
 function AdminDashboard() {
   const { user } = useAppStore();
   const t = useTheme();
-  const [payments, setPayments] = useState<Payment[]>([]);
   const router = useRouter();
 
+  const [payments,  setPayments]  = useState<Payment[]>([]);
+  const [allUsers,  setAllUsers]  = useState<User[]>([]);
+  const [routines,  setRoutines]  = useState<number>(0);
+  const [loadingKpis, setLoadingKpis] = useState(true);
+
   useEffect(() => {
-    FakePaymentService.getAll().then(setPayments);
+    Promise.all([
+      FakePaymentService.getAll(),
+      FakeUserService.getAll(),
+      FakeRoutineService.getAll(),
+    ]).then(([pays, users, ruts]) => {
+      setPayments(pays);
+      setAllUsers(users);
+      setRoutines(ruts.length);
+    }).catch(() => {}).finally(() => setLoadingKpis(false));
   }, []);
 
-  const pending = payments.filter((p) => p.status === 'pending');
+  const pending   = payments.filter((p) => p.status === 'pending');
+  const validated = payments.filter((p) => p.status === 'validated');
+  const revenue   = validated.reduce((sum, p) => sum + (p.amount ?? 0), 0);
+  const trainers  = allUsers.filter((u) => u.role === 'trainer');
+  const clients   = allUsers.filter((u) => u.role === 'client');
 
   const kpis = [
-    { icon: BarChart3,   value: '$150',              label: 'Ingresos',   color: t.accent  },
-    { icon: Users,       value: '4',                  label: 'Usuarios',   color: t.info    },
-    { icon: AlertCircle, value: String(pending.length), label: 'Pendientes', color: pending.length > 0 ? t.warning : t.success },
+    { icon: BarChart3,   value: loadingKpis ? '…' : `$${revenue}`,             label: 'Ingresos',   color: t.accent  },
+    { icon: Users,       value: loadingKpis ? '…' : String(allUsers.length),    label: 'Usuarios',   color: t.info    },
+    { icon: AlertCircle, value: loadingKpis ? '…' : String(pending.length),     label: 'Pendientes', color: pending.length > 0 ? t.warning : t.success },
   ];
 
   const reports = [
-    { icon: BarChart3, label: 'Ingresos del mes',    value: '$150', sub: '3 pagos validados',  color: t.accent  },
-    { icon: Users,     label: 'Usuarios registrados', value: '4',   sub: 'De 4 activos',        color: t.info    },
-    { icon: UserCheck, label: 'Entrenadores activos', value: '1',   sub: 'Carlos Mendez',        color: t.orange  },
+    { icon: BarChart3, label: 'Ingresos del mes',     value: loadingKpis ? '…' : `$${revenue}`, sub: `${validated.length} pagos validados`, color: t.accent },
+    { icon: Users,     label: 'Clientes activos',     value: loadingKpis ? '…' : String(clients.length),  sub: `de ${allUsers.length} usuarios`,          color: t.info   },
+    { icon: UserCheck, label: 'Entrenadores activos', value: loadingKpis ? '…' : String(trainers.length), sub: trainers.map((t) => t.name.split(' ')[0]).join(', ') || 'Ninguno', color: t.orange },
+    { icon: ClipboardList, label: 'Rutinas creadas',  value: loadingKpis ? '…' : String(routines),        sub: 'Total en plataforma',                     color: t.success },
   ];
 
   return (

@@ -32,6 +32,10 @@ class RoutineViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        trainer_filter = self.request.query_params.get('trainer')
+        if trainer_filter:
+            # Public endpoint: return routines by a specific trainer
+            return Routine.objects.filter(trainer__pk=trainer_filter).distinct()
         if user.role == 'admin':
             return Routine.objects.all()
         if user.role == 'trainer':
