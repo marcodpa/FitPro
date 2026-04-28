@@ -1,0 +1,44 @@
+[
+  {
+    "id": "p1",
+    "name": "Básico",
+    "price": 29.99,
+    "currency": "USD",
+    "period": "monthly",
+    "features": [
+      "Acceso a rutinas básicas",
+      "Seguimiento de progreso",
+      "Soporte por email"
+    ],
+    "is_active": true
+  },
+  {
+    "id": "p2",
+    "name": "Pro",
+    "price": 59.99,
+    "currency": "USD",
+    "period": "monthly",
+    "features": [
+      "Todo lo del plan básico",
+      "Entrenador personal",
+      "Nutrición personalizada",
+      "Chat con entrenador"
+    ],
+    "is_active": true
+  },
+  {
+    "id": "p3",
+    "name": "Elite",
+    "price": 99.99,
+    "currency": "USD",
+    "period": "monthly",
+    "features": [
+      "Todo lo del plan Pro",
+      "Sesiones 1-a-1",
+      "Plan de comidas semanal",
+      "Soporte 24/7",
+      "Análisis de composición corporal"
+    ],
+    "is_active": true
+  }
+]

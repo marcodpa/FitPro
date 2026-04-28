@@ -22,7 +22,7 @@ function mapUser(d: any): User {
     weight:    d.weight ?? null,
     height:    d.height ?? null,
     goal:      d.goal ?? '',
-    trainerId: d.trainer ? String(d.trainer) : undefined,
+    trainerId: (d.trainer_id || d.trainer) ? String(d.trainer_id ?? d.trainer) : undefined,
     joinedAt:  d.joined_at ? d.joined_at.split('T')[0] : '',
   };
 }

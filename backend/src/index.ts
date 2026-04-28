@@ -1,10 +1,15 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { readFileSync } from 'fs';
+import { readFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
+import auth from './auth';
+import users from './users';
+import routes from './routes';
+
+// Ensure data directory exists
+try { mkdirSync(join(process.cwd(), 'src/data'), { recursive: true }); } catch {}
 
 const app = new Hono();
-
 
 // Enable CORS for all routes
 app.use(
@@ -15,9 +20,7 @@ app.use(
   })
 );
 
-app.get('/', (c) => {
-  return c.text('Hello Hono!');
-});
+app.get('/', (c) => c.text('FitPro API v1'));
 
 app.get('/descargar-manual', (c) => {
   try {
@@ -32,6 +35,14 @@ app.get('/descargar-manual', (c) => {
     return c.text('Archivo no encontrado', 404);
   }
 });
+
+// ─── API v1 routes ─────────────────────────────────────────────────────────────
+app.route('/api/v1/auth',  auth);
+app.route('/api/v1/users', users);
+app.route('/api/v1',       routes);
+
+// Catch-all for unmapped routes — return 404 JSON
+app.all('/api/*', (c) => c.json({ detail: 'Endpoint no encontrado.' }, 404));
 
 export default {
   fetch: app.fetch,

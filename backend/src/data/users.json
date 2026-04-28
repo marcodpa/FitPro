@@ -1,0 +1,62 @@
+[
+  {
+    "id": "ix1qa5rr2",
+    "name": "Marco Test",
+    "email": "marco@test.com",
+    "password": "fba71a928bf421f9d410e5a2323cfd0b3d4cd14e8305f582ca4996a3e313d528",
+    "role": "client",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Marco%20Test",
+    "bio": "",
+    "weight": null,
+    "height": null,
+    "goal": "",
+    "trainerId": null,
+    "isActive": true,
+    "joinedAt": "2026-04-28"
+  },
+  {
+    "id": "k3596wh4c",
+    "name": "Test",
+    "email": "test2@test.com",
+    "password": "7dc00be8840745be2207c6ffb204a70e8e91fe46c9dacda87d85ade5eddd8d0c",
+    "role": "client",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Test",
+    "bio": "",
+    "weight": null,
+    "height": null,
+    "goal": "",
+    "trainerId": null,
+    "isActive": true,
+    "joinedAt": "2026-04-28"
+  },
+  {
+    "id": "5xtshga9t",
+    "name": "AdminUser",
+    "email": "admin@fitpro.com",
+    "password": "4c798ba2c2b89afbf28a753375096eaf103b8c27980e2e584dc21e8902174bc0",
+    "role": "admin",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=AdminUser",
+    "bio": "",
+    "weight": null,
+    "height": null,
+    "goal": "",
+    "trainerId": null,
+    "isActive": true,
+    "joinedAt": "2026-04-28"
+  },
+  {
+    "id": "q64onbxfg",
+    "name": "marco pacheco",
+    "email": "marcodpacheco@gmail.com",
+    "password": "bc9f6f615e5844823cc96f0968f5ae86cd7d20d74133b0054718ef6526be2bbd",
+    "role": "client",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=marco%20pacheco%20",
+    "bio": "",
+    "weight": null,
+    "height": null,
+    "goal": "",
+    "trainerId": null,
+    "isActive": true,
+    "joinedAt": "2026-04-28"
+  }
+]
