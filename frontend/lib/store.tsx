@@ -96,6 +96,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await Promise.all([
       AsyncStorage.removeItem(STORAGE_KEYS.USER),
       AsyncStorage.removeItem(STORAGE_KEYS.TOKEN),
+      AsyncStorage.removeItem('access_token'),
       TokenStorage.clear(),
     ]);
   }, []);

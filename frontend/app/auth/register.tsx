@@ -24,7 +24,7 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const router = useRouter();
-  const { login } = useAppStore();
+  const { login, setOnboarded } = useAppStore();
   const t = useTheme();
 
   const handleRegister = async () => {
@@ -40,6 +40,7 @@ export default function RegisterScreen() {
     try {
       const { user, token } = await AuthService.register(name, email, password, 'client');
       login(user, token);
+      setOnboarded();
       router.replace('/(tabs)');
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'Error al registrarse');
