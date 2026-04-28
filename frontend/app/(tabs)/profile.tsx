@@ -175,6 +175,7 @@ export default function ProfileTab() {
   const t = useTheme();
   const router = useRouter();
   const [showVoiceSheet, setShowVoiceSheet] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [trainerRequestStatus, setTrainerRequestStatus] = useState<'none' | 'pending' | 'sent'>('none');
   const [pendingRequests, setPendingRequests] = useState(PENDING_TRAINER_REQUESTS);
   const [trainerInfo, setTrainerInfo] = useState<import('@/lib/types').User | null>(null);
@@ -234,17 +235,13 @@ export default function ProfileTab() {
   };
 
   const handleLogout = () => {
-    Alert.alert('Cerrar Sesión', '¿Estás seguro que quieres salir?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Salir',
-        style: 'destructive',
-        onPress: async () => {
-          await logout();
-          router.replace('/auth/login');
-        },
-      },
-    ]);
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = async () => {
+    setShowLogoutConfirm(false);
+    await logout();
+    router.replace('/auth/login');
   };
 
   return (
@@ -742,6 +739,56 @@ export default function ProfileTab() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Logout confirmation modal */}
+      <Modal
+        visible={showLogoutConfirm}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLogoutConfirm(false)}>
+        <TouchableOpacity
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: SPACING.xxl }}
+          activeOpacity={1}
+          onPress={() => setShowLogoutConfirm(false)}>
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={() => {}}
+            style={{
+              backgroundColor: t.bg.secondary,
+              borderRadius: RADIUS.xxl,
+              padding: SPACING.xxl,
+              width: '100%',
+              maxWidth: 340,
+              borderWidth: 1,
+              borderColor: t.border.subtle,
+              gap: SPACING.xl,
+            }}>
+            <View style={{ alignItems: 'center', gap: SPACING.md }}>
+              <View style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: t.dangerDim, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: t.danger }}>
+                <LogOut size={22} color={t.danger} />
+              </View>
+              <Text style={{ color: t.text.primary, fontWeight: '800', fontSize: FONT.lg, textAlign: 'center' }}>
+                Cerrar Sesión
+              </Text>
+              <Text style={{ color: t.text.secondary, fontSize: FONT.sm, textAlign: 'center' }}>
+                ¿Estás seguro que quieres salir?
+              </Text>
+            </View>
+            <View style={{ flexDirection: 'row', gap: SPACING.md }}>
+              <TouchableOpacity
+                onPress={() => setShowLogoutConfirm(false)}
+                style={{ flex: 1, paddingVertical: SPACING.lg, borderRadius: RADIUS.xl, backgroundColor: t.bg.tertiary, alignItems: 'center', borderWidth: 1, borderColor: t.border.subtle }}>
+                <Text style={{ color: t.text.primary, fontWeight: '700', fontSize: FONT.base }}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={confirmLogout}
+                style={{ flex: 1, paddingVertical: SPACING.lg, borderRadius: RADIUS.xl, backgroundColor: t.danger, alignItems: 'center' }}>
+                <Text style={{ color: '#fff', fontWeight: '700', fontSize: FONT.base }}>Salir</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
 
       {/* Voice Commands Sheet Modal — outside ScrollView, inside fragment */}
       <Modal
