@@ -9,7 +9,7 @@ import { FakeSocialService } from '@/lib/services';
 import type { Post } from '@/lib/types';
 import {
   Heart, MessageCircle, Share2, MoreHorizontal, Plus,
-  Dumbbell, User, Pencil, Trash2, Flag, X, Search,
+  Dumbbell, User, Pencil, Trash2, Flag, X, Search, CheckCircle,
 } from 'lucide-react-native';
 import { FONT, RADIUS, SPACING } from '@/lib/theme';
 
@@ -139,7 +139,13 @@ export default function SocialTab() {
   const [editPost, setEditPost] = useState<Post | null>(null);
   const [editText, setEditText] = useState('');
   const [editSaving, setEditSaving] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [reportModal, setReportModal] = useState<string | null>(null);
+  const [reportDone, setReportDone] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
   const router = useRouter();
+
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 2500); };
 
   const loadPosts = useCallback(async () => {
     const data = await FakeSocialService.getFeed();
@@ -166,28 +172,21 @@ export default function SocialTab() {
     } catch {}
   };
 
-  const handleDelete = (postId: string) => {
-    Alert.alert('Eliminar publicación', '¿Seguro que quieres eliminar esta publicación?', [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Eliminar', style: 'destructive', onPress: async () => {
-        try {
-          await FakeSocialService.deletePost(postId);
-          setPosts((prev) => prev.filter((p) => p.id !== postId));
-        } catch {
-          // optimistic removal anyway
-          setPosts((prev) => prev.filter((p) => p.id !== postId));
-        }
-      }},
-    ]);
+  const handleDelete = (postId: string) => setDeleteConfirm(postId);
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return;
+    const id = deleteConfirm;
+    setDeleteConfirm(null);
+    try { await FakeSocialService.deletePost(id); } catch {}
+    setPosts((prev) => prev.filter((p) => p.id !== id));
   };
 
-  const handleReport = (postId: string) => {
-    Alert.alert('Reportar publicación', '¿Por qué reportas esta publicación?', [
-      { text: 'Spam', onPress: () => Alert.alert('Reporte enviado', 'Gracias, lo revisaremos pronto.') },
-      { text: 'Contenido inapropiado', onPress: () => Alert.alert('Reporte enviado', 'Gracias, lo revisaremos pronto.') },
-      { text: 'Información falsa', onPress: () => Alert.alert('Reporte enviado', 'Gracias, lo revisaremos pronto.') },
-      { text: 'Cancelar', style: 'cancel' },
-    ]);
+  const handleReport = (postId: string) => { setReportModal(postId); setReportDone(false); };
+
+  const submitReport = (reason: string) => {
+    setReportDone(true);
+    setTimeout(() => { setReportModal(null); showToast('Reporte enviado. Gracias.'); }, 900);
   };
 
   const handleEditSave = async () => {
@@ -198,7 +197,7 @@ export default function SocialTab() {
       setPosts((prev) => prev.map((p) => (p.id === editPost.id ? updated : p)));
       setEditPost(null);
     } catch {
-      Alert.alert('Error', 'No se pudo actualizar la publicación.');
+      showToast('No se pudo actualizar la publicación.');
     } finally {
       setEditSaving(false);
     }
@@ -206,6 +205,20 @@ export default function SocialTab() {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.bg.primary }}>
+
+      {/* Toast */}
+      {toast && (
+        <View style={{
+          position: 'absolute', top: 60, left: SPACING.xl, right: SPACING.xl, zIndex: 100,
+          flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
+          backgroundColor: t.success, borderRadius: RADIUS.xl, padding: SPACING.lg,
+          shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 8,
+        }}>
+          <CheckCircle size={16} color="#fff" strokeWidth={2.5} />
+          <Text style={{ color: '#fff', fontWeight: '700', fontSize: FONT.sm }}>{toast}</Text>
+        </View>
+      )}
+
       {/* Header */}
       <View style={{ backgroundColor: t.bg.secondary, paddingTop: 56, paddingBottom: SPACING.xxl, paddingHorizontal: SPACING.xxl, borderBottomWidth: 1, borderBottomColor: t.border.subtle, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' }}>
         <View>
@@ -275,6 +288,56 @@ export default function SocialTab() {
             </TouchableOpacity>
           </View>
         </View>
+      </Modal>
+
+      {/* Delete confirm modal */}
+      <Modal visible={!!deleteConfirm} transparent animationType="fade" onRequestClose={() => setDeleteConfirm(null)}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: SPACING.xxl }} activeOpacity={1} onPress={() => setDeleteConfirm(null)}>
+          <TouchableOpacity activeOpacity={1} onPress={() => {}} style={{ backgroundColor: t.bg.secondary, borderRadius: RADIUS.xxl, width: '100%', maxWidth: 340, padding: SPACING.xxl, gap: SPACING.xl, borderWidth: 1, borderColor: t.border.subtle }}>
+            <View style={{ alignItems: 'center', gap: SPACING.md }}>
+              <View style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: t.dangerDim, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: t.danger }}>
+                <Trash2 size={22} color={t.danger} />
+              </View>
+              <Text style={{ color: t.text.primary, fontWeight: '800', fontSize: FONT.lg, textAlign: 'center' }}>Eliminar publicación</Text>
+              <Text style={{ color: t.text.secondary, fontSize: FONT.sm, textAlign: 'center' }}>Esta acción no se puede deshacer.</Text>
+            </View>
+            <View style={{ flexDirection: 'row', gap: SPACING.md }}>
+              <TouchableOpacity onPress={() => setDeleteConfirm(null)} style={{ flex: 1, paddingVertical: SPACING.lg, borderRadius: RADIUS.xl, backgroundColor: t.bg.tertiary, alignItems: 'center', borderWidth: 1, borderColor: t.border.subtle }}>
+                <Text style={{ color: t.text.primary, fontWeight: '700', fontSize: FONT.base }}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={confirmDelete} style={{ flex: 1, paddingVertical: SPACING.lg, borderRadius: RADIUS.xl, backgroundColor: t.danger, alignItems: 'center' }}>
+                <Text style={{ color: '#fff', fontWeight: '700', fontSize: FONT.base }}>Eliminar</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Report modal */}
+      <Modal visible={!!reportModal} transparent animationType="slide" onRequestClose={() => setReportModal(null)}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }} activeOpacity={1} onPress={() => setReportModal(null)}>
+          <View style={{ backgroundColor: t.bg.secondary, borderTopLeftRadius: RADIUS.xxl, borderTopRightRadius: RADIUS.xxl, padding: SPACING.xxl, paddingBottom: 44 }}>
+            <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: t.border.strong, alignSelf: 'center', marginBottom: SPACING.xl }} />
+            {reportDone ? (
+              <View style={{ alignItems: 'center', gap: SPACING.md, paddingVertical: SPACING.xl }}>
+                <CheckCircle size={44} color={t.success} strokeWidth={1.5} />
+                <Text style={{ color: t.text.primary, fontWeight: '800', fontSize: FONT.lg }}>Reporte enviado</Text>
+                <Text style={{ color: t.text.secondary, fontSize: FONT.sm, textAlign: 'center' }}>Gracias. Revisaremos el contenido pronto.</Text>
+              </View>
+            ) : (
+              <>
+                <Text style={{ color: t.text.primary, fontWeight: '800', fontSize: FONT.lg, marginBottom: SPACING.sm }}>Reportar publicación</Text>
+                <Text style={{ color: t.text.secondary, fontSize: FONT.sm, marginBottom: SPACING.xl }}>¿Por qué reportas esta publicación?</Text>
+                {['Spam', 'Contenido inapropiado', 'Información falsa', 'Acoso o bullying'].map((reason) => (
+                  <TouchableOpacity key={reason} onPress={() => submitReport(reason)} style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.lg, padding: SPACING.lg, borderRadius: RADIUS.lg, backgroundColor: t.bg.elevated, marginBottom: SPACING.sm }}>
+                    <Flag size={16} color={t.warning} strokeWidth={2} />
+                    <Text style={{ color: t.text.primary, fontWeight: '600', fontSize: FONT.base }}>{reason}</Text>
+                  </TouchableOpacity>
+                ))}
+              </>
+            )}
+          </View>
+        </TouchableOpacity>
       </Modal>
     </View>
   );
