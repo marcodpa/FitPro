@@ -24,6 +24,10 @@ function mapUser(d: any): User {
     goal:      d.goal ?? '',
     trainerId: (d.trainer_id || d.trainer) ? String(d.trainer_id ?? d.trainer) : undefined,
     joinedAt:  d.joined_at ? d.joined_at.split('T')[0] : '',
+    followersCount: d.followers_count ?? 0,
+    followingCount: d.following_count ?? 0,
+    clientsCount:   d.clients_count ?? 0,
+    trainerRequestPending: d.trainer_request_pending ?? false,
   };
 }
 
@@ -260,6 +264,16 @@ export const FakeUserService = {
   },
   async rejectTrainer(userId: string): Promise<void> {
     await apiPost(`/users/${userId}/reject-trainer/`);
+  },
+  async requestTrainer(): Promise<void> {
+    await apiPost('/users/request-trainer/');
+  },
+  async getPendingTrainers(): Promise<User[]> {
+    const d = await apiGet<any>('/users/pending-trainers/');
+    return results(d, mapUser);
+  },
+  async getStats(): Promise<{ sessions: number; routines: number; followers: number; following: number }> {
+    return apiGet<any>('/users/stats/');
   },
 };
 

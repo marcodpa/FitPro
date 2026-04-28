@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppStore, useTheme } from '@/lib/store';
-import { WorkoutService, CalendarService, FakePaymentService, FakeUserService, FakeRoutineService } from '@/lib/services';
+import { WorkoutService, CalendarService, FakePaymentService, FakeUserService, FakeRoutineService, FakeWorkoutService } from '@/lib/services';
 import { FONT, RADIUS, SPACING } from '@/lib/theme';
 import type { WorkoutSession, CalendarDay, User, Payment } from '@/lib/types';
 import {
@@ -114,6 +114,7 @@ function UserDashboard() {
   const t = useTheme();
   const [todayWorkout, setTodayWorkout] = useState<WorkoutSession | null>(null);
   const [calendarDays, setCalendarDays] = useState<CalendarDay[]>([]);
+  const [recentSessions, setRecentSessions] = useState<WorkoutSession[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -122,9 +123,11 @@ function UserDashboard() {
     Promise.all([
       WorkoutService.getTodayWorkout(user.id),
       CalendarService.getCalendar(user.id),
-    ]).then(([workout, calendar]) => {
+      FakeWorkoutService.getHistory(user.id),
+    ]).then(([workout, calendar, history]) => {
       setTodayWorkout(workout);
       setCalendarDays(calendar);
+      setRecentSessions(history.slice(0, 5));
     }).catch(() => {}).finally(() => setLoading(false));
   }, [user]);
 
@@ -153,11 +156,22 @@ function UserDashboard() {
     { icon: BookOpen,     label: 'Ejercicios',  sublabel: 'Biblioteca',   route: '/exercises',    iconColor: t.success, bg: t.successDim },
   ];
 
-  const activity = [
-    { icon: CheckCircle2, text: 'Completaste Piernas & Glúteos', time: 'Hace 2 días', color: t.success },
-    { icon: Flame,         text: 'Racha activa: 5 días consecutivos', time: 'Ayer',          color: t.orange },
-    { icon: TrendingUp,    text: 'Nuevo record: 100 kg en sentadilla', time: 'Hace 3 días', color: t.info },
-  ];
+  // Build activity from real workout history
+  function timeAgo(dateStr: string): string {
+    const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
+    if (diff === 0) return 'Hoy';
+    if (diff === 1) return 'Ayer';
+    return `Hace ${diff} días`;
+  }
+
+  const activity = recentSessions.length > 0
+    ? recentSessions.map(s => ({
+        icon: CheckCircle2,
+        text: `Completaste ${s.routine?.name ?? 'rutina'}`,
+        time: timeAgo(s.date ?? s.completedAt ?? ''),
+        color: t.success,
+      }))
+    : [{ icon: TrendingUp, text: 'Aún no tienes sesiones completadas', time: '', color: t.text.tertiary as string }];
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: t.bg.primary }} showsVerticalScrollIndicator={false}>
@@ -349,11 +363,22 @@ function TrainerDashboard() {
   const { user } = useAppStore();
   const t = useTheme();
   const [clients, setClients] = useState<User[]>([]);
+  const [trainerRoutineCount, setTrainerRoutineCount] = useState<number>(0);
+  const [pendingPayment, setPendingPayment] = useState<Payment | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     if (!user) return;
-    FakeUserService.getTrainerClients(user.id).then(setClients);
+    FakeUserService.getTrainerClients(user.id).then(setClients).catch(() => {});
+    FakeRoutineService.getAll()
+      .then(rs => setTrainerRoutineCount(rs.filter(r => r.trainerId === user.id).length))
+      .catch(() => {});
+    FakePaymentService.getAll()
+      .then(pays => {
+        const p = pays.find(p => p.status === 'pending');
+        setPendingPayment(p ?? null);
+      })
+      .catch(() => {});
   }, [user]);
 
   return (
@@ -373,9 +398,9 @@ function TrainerDashboard() {
           <Image source={{ uri: user?.avatar }} style={{ width: 44, height: 44, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: t.info }} />
         </View>
         <View style={{ flexDirection: 'row', gap: 10 }}>
-          <MetricCard icon={UserCheck}    value={clients.length.toString()} label="Clientes" iconColor={t.accent}  />
-          <MetricCard icon={Users}        value="2"                          label="Cupos"    iconColor={t.info}    />
-          <MetricCard icon={ClipboardList} value="4"                         label="Rutinas"  iconColor={t.orange}  />
+          <MetricCard icon={UserCheck}    value={clients.length.toString()}         label="Clientes" iconColor={t.accent}  />
+          <MetricCard icon={Users}        value={String(Math.max(0, 10 - clients.length))} label="Cupos" iconColor={t.info} />
+          <MetricCard icon={ClipboardList} value={String(trainerRoutineCount)}      label="Rutinas"  iconColor={t.orange}  />
         </View>
       </View>
 
@@ -412,24 +437,30 @@ function TrainerDashboard() {
         </View>
 
         {/* Payment alert */}
-        <View>
-          <SectionHeader title="Próximo Cobro" />
-          <View
-            style={{
-              backgroundColor: t.bg.card, borderRadius: RADIUS.xl, padding: SPACING.lg,
-              flexDirection: 'row', alignItems: 'center', gap: 14,
-              borderWidth: 1, borderColor: t.warning + '40',
-            }}>
-            <View style={{ width: 46, height: 46, borderRadius: RADIUS.md, backgroundColor: t.warningDim, alignItems: 'center', justifyContent: 'center' }}>
-              <CreditCard size={20} color={t.warning} strokeWidth={2} />
-            </View>
-            <View style={{ flex: 1, gap: 2 }}>
-              <Text style={{ color: t.text.primary, fontWeight: '700', fontSize: FONT.base }}>Pago pendiente</Text>
-              <Text style={{ color: t.warning, fontSize: FONT.sm, fontWeight: '500' }}>Alex Garcia • $50 • Vence 15/Mar</Text>
-            </View>
-            <AlertCircle size={18} color={t.warning} strokeWidth={2} />
+        {pendingPayment && (
+          <View>
+            <SectionHeader title="Próximo Cobro" />
+            <TouchableOpacity
+              onPress={() => router.push('/payments' as any)}
+              activeOpacity={0.85}
+              style={{
+                backgroundColor: t.bg.card, borderRadius: RADIUS.xl, padding: SPACING.lg,
+                flexDirection: 'row', alignItems: 'center', gap: 14,
+                borderWidth: 1, borderColor: t.warning + '40',
+              }}>
+              <View style={{ width: 46, height: 46, borderRadius: RADIUS.md, backgroundColor: t.warningDim, alignItems: 'center', justifyContent: 'center' }}>
+                <CreditCard size={20} color={t.warning} strokeWidth={2} />
+              </View>
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={{ color: t.text.primary, fontWeight: '700', fontSize: FONT.base }}>Pago pendiente</Text>
+                <Text style={{ color: t.warning, fontSize: FONT.sm, fontWeight: '500' }}>
+                  {pendingPayment.plan} • ${pendingPayment.amount}{pendingPayment.dueDate ? ` • Vence ${pendingPayment.dueDate}` : ''}
+                </Text>
+              </View>
+              <AlertCircle size={18} color={t.warning} strokeWidth={2} />
+            </TouchableOpacity>
           </View>
-        </View>
+        )}
 
         {/* Actions */}
         <View style={{ paddingBottom: 32 }}>

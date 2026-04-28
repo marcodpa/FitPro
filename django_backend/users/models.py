@@ -41,6 +41,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         'self', symmetrical=False, blank=True,
         related_name='followers'
     )
+    trainer_request_pending = models.BooleanField(default=False, help_text='Solicitud de ser entrenador pendiente')
     is_active = models.BooleanField(default=True)
     is_staff  = models.BooleanField(default=False)
     joined_at = models.DateTimeField(auto_now_add=True)

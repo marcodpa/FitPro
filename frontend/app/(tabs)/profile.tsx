@@ -13,6 +13,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useAppStore, useTheme } from '@/lib/store';
 import { FakeUserService } from '@/lib/services';
+import { FakeWorkoutService, FakeRoutineService } from '@/lib/services';
 import type { UserRole } from '@/lib/types';
 import {
   Pencil,
@@ -39,12 +40,6 @@ import {
 } from 'lucide-react-native';
 import { FONT, RADIUS, SPACING } from '@/lib/theme';
 
-// Simulated pending trainer requests (in production this comes from the backend)
-const PENDING_TRAINER_REQUESTS = [
-  { id: '1', name: 'Laura Gómez',    email: 'laura@gmail.com',    date: '2026-04-08', avatar: 'https://api.dicebear.com/7.x/avataaars/png?seed=laura' },
-  { id: '2', name: 'Rodrigo Vargas', email: 'rodrigo@gmail.com',  date: '2026-04-09', avatar: 'https://api.dicebear.com/7.x/avataaars/png?seed=rodrigo' },
-  { id: '3', name: 'Sofía Méndez',   email: 'sofia@gmail.com',    date: '2026-04-10', avatar: 'https://api.dicebear.com/7.x/avataaars/png?seed=sofia' },
-];
 
 function SectionHeader({ title }: { title: string }) {
   const t = useTheme();
@@ -177,8 +172,17 @@ export default function ProfileTab() {
   const [showVoiceSheet, setShowVoiceSheet] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [trainerRequestStatus, setTrainerRequestStatus] = useState<'none' | 'pending' | 'sent'>('none');
-  const [pendingRequests, setPendingRequests] = useState(PENDING_TRAINER_REQUESTS);
+  const [pendingRequests, setPendingRequests] = useState<import('@/lib/types').User[]>([]);
   const [trainerInfo, setTrainerInfo] = useState<import('@/lib/types').User | null>(null);
+  const [stats, setStats] = useState({ sessions: 0, routines: 0, followers: 0 });
+
+  // Load stats
+  useEffect(() => {
+    if (!user) return;
+    FakeUserService.getStats()
+      .then(s => setStats({ sessions: s.sessions, routines: s.routines, followers: s.followers }))
+      .catch(() => {});
+  }, [user]);
 
   // Load assigned trainer for client
   useEffect(() => {
@@ -186,52 +190,36 @@ export default function ProfileTab() {
     FakeUserService.getById(user.trainerId).then(setTrainerInfo).catch(() => {});
   }, [user, activeRole]);
 
-  const handleApproveRequest = (id: string, name: string) => {
-    Alert.alert(`Aprobar a ${name}`, '¿Confirmar como Entrenador?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Aprobar',
-        onPress: async () => {
-          try {
-            await FakeUserService.approveTrainer(id);
-          } catch {}
-          setPendingRequests((r) => r.filter((x) => x.id !== id));
-        },
-      },
-    ]);
+  // Load pending trainer requests for admin
+  useEffect(() => {
+    if (activeRole !== 'admin') return;
+    FakeUserService.getPendingTrainers().then(setPendingRequests).catch(() => {});
+  }, [activeRole]);
+
+  // Set trainer request status from user data
+  useEffect(() => {
+    if (user?.trainerRequestPending) setTrainerRequestStatus('sent');
+  }, [user]);
+
+  const handleApproveRequest = async (id: string) => {
+    try {
+      await FakeUserService.approveTrainer(id);
+    } catch {}
+    setPendingRequests((r) => r.filter((x) => x.id !== id));
   };
 
-  const handleRejectRequest = (id: string, name: string) => {
-    Alert.alert(`Rechazar a ${name}`, '¿Rechazar esta solicitud?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Rechazar',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await FakeUserService.rejectTrainer(id);
-          } catch {}
-          setPendingRequests((r) => r.filter((x) => x.id !== id));
-        },
-      },
-    ]);
+  const handleRejectRequest = async (id: string) => {
+    try {
+      await FakeUserService.rejectTrainer(id);
+    } catch {}
+    setPendingRequests((r) => r.filter((x) => x.id !== id));
   };
 
-  const handleTrainerRequest = () => {
-    Alert.alert(
-      'Solicitar ser Entrenador',
-      'Tu solicitud será revisada por un administrador. Te notificaremos cuando sea aprobada.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Enviar solicitud',
-          onPress: () => {
-            setTrainerRequestStatus('sent');
-            Alert.alert('¡Solicitud enviada!', 'Revisaremos tu solicitud y te contactaremos pronto.');
-          },
-        },
-      ]
-    );
+  const handleTrainerRequest = async () => {
+    try {
+      await FakeUserService.requestTrainer();
+    } catch {}
+    setTrainerRequestStatus('sent');
   };
 
   const handleLogout = () => {
@@ -327,9 +315,9 @@ export default function ProfileTab() {
           borderBottomColor: t.border.subtle,
         }}>
         {[
-          { label: 'Sesiones', value: '14', icon: <Dumbbell size={16} color={t.text.accent} /> },
-          { label: 'Rutinas',  value: '4',  icon: <BookOpen  size={16} color={t.info} /> },
-          { label: 'Seguidores', value: '28', icon: <Users size={16} color={t.success} /> },
+          { label: 'Sesiones',   value: String(stats.sessions),  icon: <Dumbbell size={16} color={t.text.accent} /> },
+          { label: 'Rutinas',    value: String(stats.routines),   icon: <BookOpen  size={16} color={t.info} /> },
+          { label: 'Seguidores', value: String(stats.followers),  icon: <Users size={16} color={t.success} /> },
         ].map((s) => (
           <View
             key={s.label}
@@ -695,16 +683,16 @@ export default function ProfileTab() {
                       <View style={{ flex: 1 }}>
                         <Text style={{ color: t.text.primary, fontWeight: '700', fontSize: FONT.sm }}>{req.name}</Text>
                         <Text style={{ color: t.text.tertiary, fontSize: FONT.xs, marginTop: 1 }}>{req.email}</Text>
-                        <Text style={{ color: t.text.tertiary, fontSize: 10, marginTop: 1 }}>{req.date}</Text>
+                        <Text style={{ color: t.text.tertiary, fontSize: 10, marginTop: 1 }}>{req.joinedAt}</Text>
                       </View>
                       <View style={{ flexDirection: 'row', gap: SPACING.sm }}>
                         <TouchableOpacity
-                          onPress={() => handleApproveRequest(req.id, req.name)}
+                          onPress={() => handleApproveRequest(req.id)}
                           style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: t.success + '15', borderWidth: 1, borderColor: t.success + '40', alignItems: 'center', justifyContent: 'center' }}>
                           <CheckCircle size={17} color={t.success} strokeWidth={2.5} />
                         </TouchableOpacity>
                         <TouchableOpacity
-                          onPress={() => handleRejectRequest(req.id, req.name)}
+                          onPress={() => handleRejectRequest(req.id)}
                           style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: t.danger + '15', borderWidth: 1, borderColor: t.danger + '40', alignItems: 'center', justifyContent: 'center' }}>
                           <XCircle size={17} color={t.danger} strokeWidth={2.5} />
                         </TouchableOpacity>

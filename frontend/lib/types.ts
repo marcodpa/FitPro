@@ -14,6 +14,10 @@ export interface User {
   goal: string;
   trainerId?: string;
   joinedAt: string;
+  followersCount?: number;
+  followingCount?: number;
+  clientsCount?: number;
+  trainerRequestPending?: boolean;
 }
 
 export interface Exercise {
