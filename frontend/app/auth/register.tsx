@@ -14,12 +14,13 @@ import { useRouter } from 'expo-router';
 import { useAppStore, useTheme } from '@/lib/store';
 import { AuthService } from '@/lib/services';
 import { FONT, RADIUS, SPACING } from '@/lib/theme';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react-native';
 
 export default function RegisterScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const router = useRouter();
@@ -170,25 +171,39 @@ export default function RegisterScreen() {
               }}>
               Contraseña
             </Text>
-            <TextInput
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Mínimo 6 caracteres"
-              secureTextEntry
-              onFocus={() => setFocusedField('password')}
-              onBlur={() => setFocusedField(null)}
-              style={{
-                backgroundColor: t.bg.input,
-                color: t.text.primary,
-                paddingHorizontal: SPACING.lg,
-                paddingVertical: SPACING.md + 2,
-                borderRadius: RADIUS.lg,
-                fontSize: FONT.base,
-                borderWidth: 1.5,
-                borderColor: focusedField === 'password' ? t.accent : t.border.default,
-              }}
-              placeholderTextColor={t.text.tertiary}
-            />
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: t.bg.input,
+              borderRadius: RADIUS.lg,
+              borderWidth: 1.5,
+              borderColor: focusedField === 'password' ? t.accent : t.border.default,
+              paddingHorizontal: SPACING.lg,
+            }}>
+              <TextInput
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Mínimo 6 caracteres"
+                secureTextEntry={!showPassword}
+                onFocus={() => setFocusedField('password')}
+                onBlur={() => setFocusedField(null)}
+                style={{
+                  flex: 1,
+                  color: t.text.primary,
+                  paddingVertical: SPACING.md + 2,
+                  fontSize: FONT.base,
+                }}
+                placeholderTextColor={t.text.tertiary}
+              />
+              <TouchableOpacity
+                onPress={() => setShowPassword(v => !v)}
+                activeOpacity={0.7}
+                style={{ padding: 4 }}>
+                {showPassword
+                  ? <EyeOff size={18} color={t.text.tertiary} strokeWidth={2} />
+                  : <Eye    size={18} color={t.text.tertiary} strokeWidth={2} />}
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Register button */}
