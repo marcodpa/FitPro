@@ -315,12 +315,14 @@ export default function ProfileTab() {
           borderBottomColor: t.border.subtle,
         }}>
         {[
-          { label: 'Sesiones',   value: String(stats.sessions),  icon: <Dumbbell size={16} color={t.text.accent} /> },
-          { label: 'Rutinas',    value: String(stats.routines),   icon: <BookOpen  size={16} color={t.info} /> },
-          { label: 'Seguidores', value: String(stats.followers),  icon: <Users size={16} color={t.success} /> },
+          { label: 'Sesiones',   value: String(stats.sessions),  icon: <Dumbbell size={16} color={t.text.accent} />, route: '/workout/history' },
+          { label: 'Rutinas',    value: String(stats.routines),   icon: <BookOpen  size={16} color={t.info} />,       route: '/(tabs)/routines' },
+          { label: 'Seguidores', value: String(stats.followers),  icon: <Users size={16} color={t.success} />,        route: '/profile/followers' },
         ].map((s) => (
-          <View
+          <TouchableOpacity
             key={s.label}
+            activeOpacity={0.7}
+            onPress={() => router.push(s.route as any)}
             style={{
               flex: 1,
               backgroundColor: t.bg.secondary,
@@ -335,7 +337,7 @@ export default function ProfileTab() {
             <Text style={{ color: t.text.secondary, fontSize: FONT.xs }}>
               {s.label}
             </Text>
-          </View>
+          </TouchableOpacity>
         ))}
       </View>
 

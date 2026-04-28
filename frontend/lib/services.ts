@@ -258,6 +258,10 @@ export const FakeUserService = {
     const d = await apiGet<any>('/users/following/');
     return results(d, mapUser);
   },
+  async getFollowers(): Promise<User[]> {
+    const d = await apiGet<any>('/users/followers/');
+    return results(d, mapUser);
+  },
   async approveTrainer(userId: string): Promise<User> {
     const d = await apiPost<any>(`/users/${userId}/approve-trainer/`);
     return mapUser(d);
