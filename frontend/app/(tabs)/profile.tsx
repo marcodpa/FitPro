@@ -392,7 +392,7 @@ export default function ProfileTab() {
       </View>
 
       {/* Personal info */}
-      <SectionHeader title="Informacion personal" />
+      <SectionHeader title="Información personal" />
       <View
         style={{
           marginHorizontal: SPACING.xxl,
@@ -428,7 +428,7 @@ export default function ProfileTab() {
       </View>
 
       {/* Settings */}
-      <SectionHeader title="Configuracion" />
+      <SectionHeader title="Configuración" />
       <View
         style={{
           marginHorizontal: SPACING.xxl,
@@ -446,7 +446,7 @@ export default function ProfileTab() {
           />
           <ToggleRow
             icon={<WifiOff size={17} color={t.warning} />}
-            label="Modo Offline"
+            label="Modo sin conexión"
             value={isOffline}
             onToggle={toggleOffline}
           />
@@ -509,7 +509,7 @@ export default function ProfileTab() {
                   borderColor: 'rgba(200,246,93,0.2)',
                 }}>
                 <Text style={{ color: t.text.accent, fontSize: FONT.xs, fontWeight: '700', letterSpacing: 0.5, marginBottom: 4 }}>
-                  MICROFONO ACTIVO
+                  MICRÓFONO ACTIVO
                 </Text>
                 <Text style={{ color: t.text.secondary, fontSize: FONT.xs, lineHeight: 16 }}>
                   Di "ir a rutinas", "modo oscuro", "empezar entrenamiento" y mas. El icono del microfono aparece en pantalla.
@@ -737,7 +737,7 @@ export default function ProfileTab() {
             }}>
             <LogOut size={17} color={t.danger} />
             <Text style={{ color: t.danger, fontWeight: '700', fontSize: FONT.base }}>
-              Cerrar Sesion
+              Cerrar Sesión
             </Text>
           </TouchableOpacity>
         </View>
@@ -789,9 +789,9 @@ export default function ProfileTab() {
             Habla claramente en espanol. El microfono escucha continuamente.
           </Text>
           {[
-            { group: 'Navegacion', items: ['"ir a inicio"', '"ir a rutinas"', '"ir a social"', '"ir a chat"', '"ir a perfil"'] },
-            { group: 'Entrenamiento', items: ['"empezar entrenamiento"', '"iniciar sesion"', '"entrenar"'] },
-            { group: 'Ajustes', items: ['"modo oscuro"', '"modo claro"', '"cerrar sesion"'] },
+            { group: 'Navegación', items: ['"ir a inicio"', '"ir a rutinas"', '"ir a social"', '"ir a chat"', '"ir a perfil"'] },
+            { group: 'Entrenamiento', items: ['"empezar entrenamiento"', '"iniciar sesión"', '"entrenar"'] },
+            { group: 'Ajustes', items: ['"modo oscuro"', '"modo claro"', '"cerrar sesión"'] },
           ].map((section) => (
             <View key={section.group} style={{ marginBottom: SPACING.xl }}>
               <Text

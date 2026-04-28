@@ -55,7 +55,7 @@ const SLIDES = [
     title: 'Comunidad\nFitness Real',
     subtitle: 'Comparte logros, celebra tu progreso e inspira a cientos de atletas en tu comunidad.',
     stat1: { value: '+500', label: 'Atletas activos' },
-    stat2: { value: '5★', label: 'Valoracion media' },
+    stat2: { value: '5★', label: 'Valoración media' },
   },
 ];
 

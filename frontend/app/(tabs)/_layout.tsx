@@ -77,7 +77,7 @@ export default function TabsLayout() {
           }}>
           <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: '#000' }} />
           <Text style={{ color: '#000', fontWeight: '700', fontSize: 12, letterSpacing: 0.2, flex: 1 }}>
-            SIN CONEXIÓN — modo offline activo
+            SIN CONEXIÓN — toca para ver opciones
           </Text>
           <Text style={{ color: '#00000080', fontWeight: '600', fontSize: 11 }}>Ver opciones →</Text>
         </TouchableOpacity>

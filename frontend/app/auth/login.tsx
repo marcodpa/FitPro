@@ -89,7 +89,7 @@ export default function LoginScreen() {
             Bienvenido{'\n'}de vuelta
           </Text>
           <Text style={{ color: t.text.secondary, fontSize: FONT.md, lineHeight: 22 }}>
-            Inicia sesion para continuar tu progreso
+            Inicia sesión para continuar tu progreso
           </Text>
         </View>
 
@@ -98,7 +98,7 @@ export default function LoginScreen() {
           {/* Email */}
           <View>
             <Text style={{ color: t.text.secondary, fontSize: FONT.xs, fontWeight: '700', letterSpacing: 1, marginBottom: 8 }}>
-              CORREO ELECTRONICO
+              CORREO ELECTRÓNICO
             </Text>
             <View style={fieldStyle('email')}>
               <Mail size={17} color={focused === 'email' ? t.accent : t.text.tertiary} strokeWidth={2} />
@@ -119,10 +119,10 @@ export default function LoginScreen() {
           {/* Password */}
           <View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <Text style={{ color: t.text.secondary, fontSize: FONT.xs, fontWeight: '700', letterSpacing: 1 }}>CONTRASENA</Text>
+              <Text style={{ color: t.text.secondary, fontSize: FONT.xs, fontWeight: '700', letterSpacing: 1 }}>CONTRASEÑA</Text>
               <Link href="/auth/forgot-password" asChild>
                 <TouchableOpacity>
-                  <Text style={{ color: t.accent, fontSize: FONT.sm, fontWeight: '600' }}>Olvide mi contrasena</Text>
+                  <Text style={{ color: t.accent, fontSize: FONT.sm, fontWeight: '600' }}>Olvidé mi contraseña</Text>
                 </TouchableOpacity>
               </Link>
             </View>
@@ -178,17 +178,17 @@ export default function LoginScreen() {
             {loading
               ? <ActivityIndicator color={t.accentText} />
               : <>
-                  <Text style={{ color: t.accentText, fontWeight: '800', fontSize: FONT.lg, letterSpacing: -0.3 }}>Iniciar Sesion</Text>
+                  <Text style={{ color: t.accentText, fontWeight: '800', fontSize: FONT.lg, letterSpacing: -0.3 }}>Iniciar Sesión</Text>
                   <ArrowRight size={18} color={t.accentText} strokeWidth={2.5} />
                 </>}
           </TouchableOpacity>
 
           {/* Register link */}
           <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 4, marginTop: 4 }}>
-            <Text style={{ color: t.text.secondary, fontSize: FONT.base }}>No tienes cuenta?</Text>
+            <Text style={{ color: t.text.secondary, fontSize: FONT.base }}>¿No tienes cuenta?</Text>
             <Link href="/auth/register" asChild>
               <TouchableOpacity>
-                <Text style={{ color: t.accent, fontSize: FONT.base, fontWeight: '700' }}>Registrate</Text>
+                <Text style={{ color: t.accent, fontSize: FONT.base, fontWeight: '700' }}>Regístrate</Text>
               </TouchableOpacity>
             </Link>
           </View>

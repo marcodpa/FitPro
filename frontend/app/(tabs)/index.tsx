@@ -144,19 +144,19 @@ function UserDashboard() {
   })();
 
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Buenos dias' : hour < 18 ? 'Buenas tardes' : 'Buenas noches';
+  const greeting = hour < 12 ? 'Buenos días' : hour < 18 ? 'Buenas tardes' : 'Buenas noches';
 
   const quickActions = [
-    { icon: Timer,        label: 'Cronometro', sublabel: 'Temporizador', route: '/workout/timer', iconColor: t.accent,   bg: t.accentDim },
+    { icon: Timer,        label: 'Cronómetro', sublabel: 'Temporizador', route: '/workout/timer', iconColor: t.accent,   bg: t.accentDim },
     { icon: CalendarDays, label: 'Calendario',  sublabel: 'Ver semana',   route: '/calendar',     iconColor: t.info,    bg: t.infoDim },
     { icon: MessageCircle,label: 'Entrenador',  sublabel: 'Chat directo', route: '/chat',          iconColor: t.orange,  bg: t.orangeDim },
     { icon: BookOpen,     label: 'Ejercicios',  sublabel: 'Biblioteca',   route: '/exercises',    iconColor: t.success, bg: t.successDim },
   ];
 
   const activity = [
-    { icon: CheckCircle2, text: 'Completaste Piernas & Gluteos', time: 'Hace 2 dias', color: t.success },
-    { icon: Flame,         text: 'Racha activa: 5 dias consecutivos', time: 'Ayer',          color: t.orange },
-    { icon: TrendingUp,    text: 'Nuevo record: 100 kg en sentadilla', time: 'Hace 3 dias', color: t.info },
+    { icon: CheckCircle2, text: 'Completaste Piernas & Glúteos', time: 'Hace 2 días', color: t.success },
+    { icon: Flame,         text: 'Racha activa: 5 días consecutivos', time: 'Ayer',          color: t.orange },
+    { icon: TrendingUp,    text: 'Nuevo record: 100 kg en sentadilla', time: 'Hace 3 días', color: t.info },
   ];
 
   return (
@@ -271,7 +271,7 @@ function UserDashboard() {
                 <CalendarDays size={24} color={t.text.tertiary} strokeWidth={1.5} />
               </View>
               <Text style={{ color: t.text.primary, fontWeight: '700', fontSize: FONT.lg, letterSpacing: -0.3 }}>
-                Dia de descanso
+                Día de descanso
               </Text>
               <Text style={{ color: t.text.secondary, fontSize: FONT.sm, textAlign: 'center', marginTop: 6, lineHeight: 19 }}>
                 No tienes entrenamiento programado para hoy.
@@ -287,7 +287,7 @@ function UserDashboard() {
 
         {/* Quick Actions */}
         <View>
-          <SectionHeader title="Accesos Rapidos" />
+          <SectionHeader title="Accesos Rápidos" />
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
             {quickActions.map((a) => (
               <TouchableOpacity
@@ -413,7 +413,7 @@ function TrainerDashboard() {
 
         {/* Payment alert */}
         <View>
-          <SectionHeader title="Proximo Cobro" />
+          <SectionHeader title="Próximo Cobro" />
           <View
             style={{
               backgroundColor: t.bg.card, borderRadius: RADIUS.xl, padding: SPACING.lg,
@@ -433,7 +433,7 @@ function TrainerDashboard() {
 
         {/* Actions */}
         <View style={{ paddingBottom: 32 }}>
-          <SectionHeader title="Acciones Rapidas" />
+          <SectionHeader title="Acciones Rápidas" />
           <View style={{ flexDirection: 'row', gap: 10 }}>
             {[
               { icon: ClipboardList, label: 'Mis Rutinas', route: '/routines', color: t.info,  bg: t.infoDim },

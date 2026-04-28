@@ -85,10 +85,10 @@ function VoiceLayer() {
           break;
         case 'auth:logout':
           if (isAuthenticated) {
-            Alert.alert('Cerrar Sesion', `Comando de voz: "${label}". Salir?`, [
+            Alert.alert('Cerrar Sesión', `Comando de voz: "${label}". Salir?`, [
               { text: 'Cancelar', style: 'cancel' },
               {
-                text: 'Salir',
+                text: 'Salir?',
                 style: 'destructive',
                 onPress: async () => {
                   await logout();

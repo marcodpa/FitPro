@@ -111,7 +111,7 @@ export default function OfflineScreen() {
               Modo Sin Conexión
             </Text>
             <Text style={{ color: t.text.secondary, fontSize: FONT.xs, marginTop: 2 }}>
-              Funciones disponibles offline
+              Funciones disponibles sin conexión
             </Text>
           </View>
         </View>
@@ -137,7 +137,7 @@ export default function OfflineScreen() {
               Sin conexión activa
             </Text>
             <Text style={{ color: t.text.secondary, fontSize: FONT.xs, marginTop: 2 }}>
-              Estás usando la app en modo offline. Algunos datos pueden no estar actualizados.
+              Estás usando la app en modo sin conexión. Algunos datos pueden no estar actualizados.
             </Text>
           </View>
         </View>
@@ -217,7 +217,7 @@ export default function OfflineScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.sm }}>
             <XCircle size={15} color={t.danger} strokeWidth={2.5} />
             <Text style={{ color: t.text.primary, fontWeight: '800', fontSize: FONT.lg }}>
-              No disponible offline
+              No disponible sin conexión
             </Text>
           </View>
 
