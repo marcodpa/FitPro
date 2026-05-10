@@ -44,7 +44,9 @@ app.route('/api/v1',       routes);
 // Catch-all for unmapped routes — return 404 JSON
 app.all('/api/*', (c) => c.json({ detail: 'Endpoint no encontrado.' }, 404));
 
+const port = Number(process.env.PORT) || 3002;
+
 export default {
   fetch: app.fetch,
-  port: 3002,
+  port,
 };
