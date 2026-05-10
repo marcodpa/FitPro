@@ -58,5 +58,20 @@
     "trainerId": null,
     "isActive": true,
     "joinedAt": "2026-04-28"
+  },
+  {
+    "id": "xgoeax0iu",
+    "name": "Test User",
+    "email": "test@test.com",
+    "password": "2fef60a737f790ccde2e4049de9b0630e746a7baa38e6b1489dea3c45bf72cee",
+    "role": "client",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Test%20User",
+    "bio": "",
+    "weight": null,
+    "height": null,
+    "goal": "",
+    "trainerId": null,
+    "isActive": true,
+    "joinedAt": "2026-05-10"
   }
 ]
