@@ -1,0 +1,5 @@
+{
+  "buildCommand": "cd frontend && npm install && npx expo export -p web",
+  "outputDirectory": "frontend/dist",
+  "framework": null
+}
