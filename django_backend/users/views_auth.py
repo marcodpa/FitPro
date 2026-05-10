@@ -54,12 +54,14 @@ class ForgotPasswordView(APIView):
 
     def post(self, request):
         email = request.data.get('email', '').strip().lower()
-        # In production send a real email. Here we acknowledge always (security: don't reveal if user exists)
         try:
-            User.objects.get(email=email)
+            user = User.objects.get(email=email)
+            return Response({
+                'detail': 'Si el email existe, recibirás un enlace de recuperación.',
+                'uid': str(user.pk),
+            })
         except User.DoesNotExist:
-            pass
-        return Response({'detail': 'Si el email existe, recibirás un enlace de recuperación.'})
+            return Response({'detail': 'Si el email existe, recibirás un enlace de recuperación.'})
 
 class ChangeTrainerView(APIView):
     def post(self, request):

@@ -10,12 +10,13 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { FakeAuthService } from '@/lib/services';
+import { api } from '@/lib/api';
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [uid, setUid] = useState<string | null>(null);
   const router = useRouter();
 
   const handleSend = async () => {
@@ -25,7 +26,12 @@ export default function ForgotPasswordScreen() {
     }
     setLoading(true);
     try {
-      await FakeAuthService.forgotPassword(email);
+      const res = await api<{ detail: string; uid?: string }>('/auth/forgot-password/', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+        skipAuth: true,
+      });
+      if (res.uid) setUid(res.uid);
       setSent(true);
     } catch {
       Alert.alert('Error', 'No se pudo enviar el email');
@@ -67,7 +73,7 @@ export default function ForgotPasswordScreen() {
               Revisa tu bandeja de entrada. También puedes ingresar tu nueva contraseña directamente.
             </Text>
             <TouchableOpacity
-              onPress={() => router.push('/auth/reset-password' as any)}
+              onPress={() => router.push({ pathname: '/auth/reset-password', params: { uid: uid ?? '' } } as any)}
               style={{
                 backgroundColor: '#0d9e6e',
                 borderRadius: 16,

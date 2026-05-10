@@ -167,6 +167,13 @@ auth.post('/logout/', (c) => c.json({ detail: 'Sesión cerrada.' }));
 
 // POST /api/v1/auth/forgot-password/
 auth.post('/forgot-password/', async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  const email = (body as any).email?.trim().toLowerCase() ?? '';
+  const users = loadUsers();
+  const user = users.find(u => u.email.toLowerCase() === email);
+  if (user) {
+    return c.json({ detail: 'Si el email existe, recibirás un enlace de recuperación.', uid: user.id });
+  }
   return c.json({ detail: 'Si el email existe, recibirás un enlace de recuperación.' });
 });
 
